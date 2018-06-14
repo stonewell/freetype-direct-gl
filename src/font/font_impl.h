@@ -5,6 +5,6 @@
 
 namespace ftdgl {
 namespace impl {
-FontPtr CreateFontFromDesc(FT_Library & library, const std::string & desc);
+FontPtr CreateFontFromDesc(util::MemoryBufferPtr mem_buf, FT_Library & library, const std::string & desc);
 } //namespace impl
 } //namespace ftdgl

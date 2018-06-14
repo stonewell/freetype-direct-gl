@@ -4,7 +4,9 @@
 // #include FT_ADVANCES_H
 #include FT_LCD_FILTER_H
 
+#include "memory_buffer.h"
 #include "font_impl.h"
+#include "glyph_impl.h"
 
 #include <fontconfig/fontconfig.h>
 #include <iostream>
@@ -28,29 +30,31 @@ const struct {
 } FT_Errors[] =
 #include FT_ERRORS_H
 
-struct font_desc_s {
-    std::string file_name;
-    double size;
-    bool bold;
-    bool underline;
-    bool force_bold;
+        struct font_desc_s {
+            std::string file_name;
+            double size;
+            bool bold;
+            bool underline;
+            bool force_bold;
 
-    bool operator == (const font_desc_s & v) {
-        return file_name == v.file_name
+            bool operator == (const font_desc_s & v) {
+                return file_name == v.file_name
                 && size == v.size
                 && bold == v.bold
                 && force_bold == v.force_bold
                 && underline == v.underline;
-    }
-};
+            }
+        };
 
 class FontImpl : public Font {
 public:
-    FontImpl(FT_Library & library, const font_desc_s & font_desc)
-        : m_FontDesc {font_desc}
-        , m_FontFaceInitialized {false}
+    FontImpl(util::MemoryBufferPtr mem_buf, FT_Library & library, const font_desc_s & font_desc)
+        : m_FontFaceInitialized {false}
+        , m_FontDesc {font_desc}
         , m_Library {library}
         , m_Face {}
+        , m_MemoryBuffer {mem_buf}
+        , m_Glyphs {}
     {
         InitFont();
     }
@@ -69,12 +73,16 @@ public:
 private:
     void InitFont();
     void FreeFont();
-
-    font_desc_s m_FontDesc;
+    bool OutlineExist();
 
     bool m_FontFaceInitialized;
+    font_desc_s m_FontDesc;
+
     FT_Library & m_Library;
     FT_Face m_Face;
+    util::MemoryBufferPtr m_MemoryBuffer;
+
+    Glyphs m_Glyphs;
 };
 
 
@@ -145,7 +153,9 @@ match_description(const std::string & description, font_desc_s & fd )
 #undef GET_VALUE
 }
 
-FontPtr CreateFontFromDesc(FT_Library & library, const std::string & desc) {
+FontPtr CreateFontFromDesc(util::MemoryBufferPtr memory_buffer,
+                           FT_Library & library,
+                           const std::string & desc) {
     font_desc_s fd {};
 
     if (!match_description(desc, fd))
@@ -158,7 +168,7 @@ FontPtr CreateFontFromDesc(FT_Library & library, const std::string & desc) {
               << "u:" << fd.underline
               << std::endl;
 
-    return std::make_shared<FontImpl>(library, fd);
+    return std::make_shared<FontImpl>(memory_buffer, library, fd);
 }
 
 bool FontImpl::IsSameFont(const std::string & desc) {
@@ -168,18 +178,6 @@ bool FontImpl::IsSameFont(const std::string & desc) {
         return false;
 
     return m_FontDesc == fd;
-}
-
-GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
-    (void)codepoint;
-    return GlyphPtr {};
-}
-
-bool FontImpl::LoadGlyphs(std::vector<uint32_t> codepoints,
-                          Glyphs & glyphs) {
-    (void)codepoints;
-    (void)glyphs;
-    return false;
 }
 
 void FontImpl::InitFont() {
@@ -237,5 +235,70 @@ void FontImpl::FreeFont() {
     FT_Done_Face( m_Face );
 }
 
+bool FontImpl::OutlineExist() {
+    FT_GlyphSlot slot = m_Face->glyph;
+    FT_Outline &outline = slot->outline;
+
+    if (slot->format != FT_GLYPH_FORMAT_OUTLINE)
+        return false; // Should never happen.  Just an extra check.
+
+    if (outline.n_contours <= 0 || outline.n_points <= 0)
+        return false; // Can happen for some font files.
+
+    FT_Error error = FT_Outline_Check(&outline);
+
+    if(error) {
+        fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
+                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+    }
+
+    return !error;
 }
+
+GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
+    auto it = m_Glyphs.find(codepoint);
+
+    if (it != m_Glyphs.end())
+        return it->second;
+
+    FT_UInt index = FT_Get_Char_Index(m_Face, (FT_Long)codepoint);
+
+    FT_Error error = FT_Load_Glyph(m_Face,
+                                   index,
+                                   FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP);
+    if(error) {
+        fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
+                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+        return GlyphPtr {};
+    }
+
+    if (!OutlineExist()) {
+        return GlyphPtr {};
+    }
+
+    auto g = CreateGlyph(m_MemoryBuffer, codepoint, m_Face->glyph->outline);
+
+    if (g)
+        m_Glyphs.emplace(codepoint, g);
+
+    return g;
 }
+
+bool FontImpl::LoadGlyphs(std::vector<uint32_t> codepoints,
+                          Glyphs & glyphs) {
+    bool all_loaded = true;
+
+    for (const auto & codepoint : codepoints) {
+        auto glyph = LoadGlyph(codepoint);
+
+        if (glyph)
+            glyphs.emplace(codepoint, glyph);
+        else
+            all_loaded = false;
+    }
+
+    return all_loaded;
+}
+
+} //namespace impl
+} //namespace ftdgl

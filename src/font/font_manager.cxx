@@ -5,6 +5,7 @@
 #include FT_LCD_FILTER_H
 
 #include "font_manager.h"
+#include "memory_buffer.h"
 #include "font_impl.h"
 
 #include <forward_list>
@@ -25,12 +26,15 @@ const struct {
 } FT_Errors[] =
 #include FT_ERRORS_H
 
+constexpr size_t DEFAULT_MEM_BUF_SIZE = 64 * 1024 * 1024;
+
 class FontManagerImpl : public FontManager {
 public:
-    FontManagerImpl()
+    FontManagerImpl(size_t mem_buf_size)
         : m_Fonts {}
         , m_LibInited {false}
         , m_Library {}
+        , m_MemoryBuffer {util::CreateMemoryBuffer(mem_buf_size)}
     {
         InitFreeTypeLib();
     }
@@ -70,6 +74,8 @@ private:
 
     bool m_LibInited;
     FT_Library m_Library;
+
+    util::MemoryBufferPtr m_MemoryBuffer;
 };
 
 FontPtr FontManagerImpl::CreateFontFromDesc(const std::string &desc) {
@@ -79,7 +85,7 @@ FontPtr FontManagerImpl::CreateFontFromDesc(const std::string &desc) {
         }
     }
 
-    auto f = impl::CreateFontFromDesc(m_Library, desc);
+    auto f = impl::CreateFontFromDesc(m_MemoryBuffer, m_Library, desc);
 
     if (f)
         m_Fonts.push_front(f);
@@ -89,6 +95,6 @@ FontPtr FontManagerImpl::CreateFontFromDesc(const std::string &desc) {
 } // namespace impl
 
 FontManagerPtr CreateFontManager() {
-    return std::make_shared<impl::FontManagerImpl>();
+    return std::make_shared<impl::FontManagerImpl>(impl::DEFAULT_MEM_BUF_SIZE);
 }
 } // namespace ftdgl
