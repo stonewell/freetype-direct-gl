@@ -5,3 +5,7 @@ SET(font_src
 )
 
 ADD_LIBRARY(font STATIC ${font_src})
+
+TARGET_INCLUDE_DIRECTORIES(font PRIVATE
+  ${FREETYPE_INCLUDE_DIRS}
+)
