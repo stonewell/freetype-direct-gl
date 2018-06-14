@@ -12,6 +12,14 @@ struct font_desc_s {
     bool bold;
     bool underline;
     bool force_bold;
+
+    bool operator == (const font_desc_s & v) {
+        return file_name == v.file_name
+                && size == v.size
+                && bold == v.bold
+                && force_bold == v.force_bold
+                && underline == v.underline;
+    }
 };
 
 class FontImpl : public Font {
@@ -20,6 +28,9 @@ public:
         : m_FontDesc {font_desc} {
     }
     virtual ~FontImpl() = default;
+
+public:
+    virtual bool IsSameFont(const std::string & desc);
 
 private:
     font_desc_s m_FontDesc;
@@ -107,6 +118,15 @@ FontPtr CreateFontFromDesc(const std::string & desc) {
               << std::endl;
 
     return std::make_shared<FontImpl>(fd);
+}
+
+bool FontImpl::IsSameFont(const std::string & desc) {
+    font_desc_s fd {};
+
+    if (!match_description(desc, fd))
+        return false;
+
+    return m_FontDesc == fd;
 }
 
 }
