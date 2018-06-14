@@ -12,4 +12,5 @@ TARGET_INCLUDE_DIRECTORIES(test_font_manager PRIVATE
 
 TARGET_LINK_LIBRARIES(test_font_manager
     font
+    ${FONTCONFIG_LIBRARY}
 )
