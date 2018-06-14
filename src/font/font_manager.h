@@ -8,11 +8,11 @@
 namespace ftdgl {
 class FontManager {
 public:
-    FontManager() = default;
-    virtual ~FontManager() = default;
+  FontManager() = default;
+  virtual ~FontManager() = default;
 
 public:
-    virtual FontPtr CreateFontFromDesc(const std::string &desc) = 0;
+  virtual FontPtr CreateFontFromDesc(const std::string &desc) = 0;
 };
 
 using FontManagerPtr = std::shared_ptr<FontManager>;
