@@ -6,7 +6,8 @@ CMAKE_POLICY(
 
 PROJECT (freetype-direct-gl
 	VERSION 1.0.0
-	)
+	LANGUAGES C CXX
+)
 
 INCLUDE(ExternalProject)
 

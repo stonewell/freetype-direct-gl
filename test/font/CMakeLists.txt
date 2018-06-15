@@ -11,7 +11,7 @@ TARGET_INCLUDE_DIRECTORIES(test_font_manager PRIVATE
 )
 
 TARGET_LINK_LIBRARIES(test_font_manager
-    font
+    freetype_direct_gl
     ${FONTCONFIG_LIBRARY}
     ${FREETYPE_LIBRARY}
 )

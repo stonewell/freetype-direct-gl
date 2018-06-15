@@ -7,9 +7,9 @@ SET(font_src
   glyph_compiler.h glyph_compiler.cxx
 )
 
-ADD_LIBRARY(font STATIC
+ADD_LIBRARY(font OBJECT
   ${font_src}
-  $<TARGET_OBJECTS:utils>)
+)
 
 TARGET_INCLUDE_DIRECTORIES(font PRIVATE
   ${FREETYPE_INCLUDE_DIRS}
