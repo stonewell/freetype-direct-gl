@@ -261,7 +261,7 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
         return GlyphPtr {};
     }
 
-    auto g = CreateGlyph(m_MemoryBuffer, codepoint, m_Face->glyph);
+    auto g = CreateGlyph(m_MemoryBuffer, codepoint, m_Face->units_per_EM, m_Face->glyph);
 
     if (g)
         m_Glyphs.emplace(codepoint, g);

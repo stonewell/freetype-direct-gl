@@ -22,6 +22,7 @@ struct compile_context_s {
     size_t size;
     int contourCount;
     FT_Pos firstX, firstY, currentX, currentY;
+    int unitPerEM;
 };
 
 static int MoveToFunction(const FT_Vector *to,
@@ -42,10 +43,10 @@ static void AppendTriangle(compile_context_s * context,
                           Kind kind);
 
 
-size_t compile_glyph(uint8_t * addr, FT_Outline & outline) {
+size_t compile_glyph(uint8_t * addr, int unitPerEM, FT_Outline & outline) {
     FT_Outline_Funcs callbacks;
 
-    compile_context_s context {.addr=addr, .size=0};
+    compile_context_s context {.addr=addr, .size=0, .unitPerEM = unitPerEM};
 
     callbacks.move_to = MoveToFunction;
     callbacks.line_to = LineToFunction;
@@ -127,8 +128,8 @@ void AppendVertex(compile_context_s * context,
 {
     double * p = reinterpret_cast<double *>(context->addr);
 
-    *p++ = x;
-    *p++ = y;
+    *p++ = x / context->unitPerEM;
+    *p++ = y / context->unitPerEM;
     *p++ = s;
     *p++ = t;
 

@@ -44,10 +44,10 @@ private:
     size_t m_Size;
 };
 
-GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, FT_GlyphSlot & slot) {
+GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, int unitPerEM, FT_GlyphSlot & slot) {
     uint8_t * addr = mem_buf->Begin();
 
-    size_t size = compile_glyph(addr, slot->outline);
+    size_t size = compile_glyph(addr, unitPerEM, slot->outline);
 
     mem_buf->End(size);
 
