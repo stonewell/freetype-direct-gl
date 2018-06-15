@@ -4,6 +4,7 @@ SET(font_src
   font_impl.h font_impl.cxx
   glyph.h
   glyph_impl.h glyph_impl.cxx
+  glyph_compiler.h glyph_compiler.cxx
 )
 
 ADD_LIBRARY(font STATIC

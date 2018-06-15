@@ -7,6 +7,7 @@
 #include "memory_buffer.h"
 #include "font_impl.h"
 #include "glyph_impl.h"
+#include "err_msg.h"
 
 #include <fontconfig/fontconfig.h>
 #include <iostream>
@@ -19,32 +20,21 @@ namespace impl {
 #define HRESf 64.f
 #define DPI   72
 
-#undef __FTERRORS_H__
-#define FT_ERRORDEF( e, v, s )  { e, s },
-#define FT_ERROR_START_LIST     {
-#define FT_ERROR_END_LIST       { 0, 0 } };
-static
-const struct {
-    int          code;
-    const char*  message;
-} FT_Errors[] =
-#include FT_ERRORS_H
+struct font_desc_s {
+    std::string file_name;
+    double size;
+    bool bold;
+    bool underline;
+    bool force_bold;
 
-        struct font_desc_s {
-            std::string file_name;
-            double size;
-            bool bold;
-            bool underline;
-            bool force_bold;
-
-            bool operator == (const font_desc_s & v) {
-                return file_name == v.file_name
+    bool operator == (const font_desc_s & v) {
+        return file_name == v.file_name
                 && size == v.size
                 && bold == v.bold
                 && force_bold == v.force_bold
                 && underline == v.underline;
-            }
-        };
+    }
+};
 
 class FontImpl : public Font {
 public:
@@ -195,16 +185,14 @@ void FontImpl::InitFont() {
     error = FT_New_Face(m_Library, m_FontDesc.file_name.c_str(), 0, &m_Face);
 
     if(error) {
-        fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
-                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+        err_msg(error, __LINE__);
         goto cleanup;
     }
 
     /* Select charmap */
     error = FT_Select_Charmap(m_Face, FT_ENCODING_UNICODE);
     if(error) {
-        fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
-                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+        err_msg(error, __LINE__);
         goto cleanup_face;
     }
 
@@ -212,8 +200,7 @@ void FontImpl::InitFont() {
     error = FT_Set_Char_Size(m_Face, (int)(m_FontDesc.size * HRES), 0, DPI * HRES, DPI);
 
     if(error) {
-        fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
-                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+        err_msg(error, __LINE__);
         goto cleanup_face;
     }
 
@@ -248,8 +235,7 @@ bool FontImpl::OutlineExist() {
     FT_Error error = FT_Outline_Check(&outline);
 
     if(error) {
-        fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
-                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+        err_msg(error, __LINE__);
     }
 
     return !error;
@@ -267,8 +253,7 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
                                    index,
                                    FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP);
     if(error) {
-        fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
-                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+        err_msg(error, __LINE__);
         return GlyphPtr {};
     }
 
@@ -276,7 +261,7 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
         return GlyphPtr {};
     }
 
-    auto g = CreateGlyph(m_MemoryBuffer, codepoint, m_Face->glyph->outline);
+    auto g = CreateGlyph(m_MemoryBuffer, codepoint, m_Face->glyph);
 
     if (g)
         m_Glyphs.emplace(codepoint, g);

@@ -4,6 +4,6 @@
 
 namespace ftdgl {
 namespace impl {
-GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, FT_Outline & outline);
+GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, FT_GlyphSlot & slot);
 } //namespace impl
 } //namespace ftdgl

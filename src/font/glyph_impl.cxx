@@ -6,6 +6,7 @@
 
 #include "memory_buffer.h"
 #include "glyph_impl.h"
+#include "glyph_compiler.h"
 
 #include <fontconfig/fontconfig.h>
 #include <iostream>
@@ -15,13 +16,42 @@ namespace ftdgl {
 namespace impl {
 
 class GlyphImpl : public Glyph {
+public:
+    GlyphImpl(uint32_t codepoint, FT_GlyphSlot & slot, uint8_t * addr, size_t size)
+        : m_Codepoint{codepoint}
+        , m_Addr{addr}
+        , m_Size{size}
+    {
+        InitGlyph(slot);
+    }
+
+    virtual ~GlyphImpl() {
+    }
+
+public:
+    void InitGlyph(FT_GlyphSlot & slot) {
+        (void)slot;
+    }
+
+public:
+    virtual uint32_t GetCodepoint() const { return m_Codepoint; }
+    virtual uint8_t * GetAddr() const { return m_Addr; }
+    virtual size_t GetSize() const { return m_Size; }
+
+private:
+    uint32_t m_Codepoint;
+    uint8_t * m_Addr;
+    size_t m_Size;
 };
 
-GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, FT_Outline & outline) {
-    (void)codepoint;
-    (void)outline;
-    (void)mem_buf;
-    return std::make_shared<GlyphImpl>();
+GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, FT_GlyphSlot & slot) {
+    uint8_t * addr = mem_buf->Begin();
+
+    size_t size = compile_glyph(addr, slot->outline);
+
+    mem_buf->End(size);
+
+    return std::make_shared<GlyphImpl>(codepoint, slot, addr, size);
 }
 
 } //namespace impl
