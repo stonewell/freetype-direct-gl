@@ -1,5 +1,5 @@
 SET(render_src
-  render.h
+  render.h render.cxx
 )
 
 ADD_LIBRARY(render OBJECT ${render_src})

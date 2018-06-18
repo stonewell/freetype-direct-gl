@@ -11,8 +11,12 @@ public:
     virtual ~Render() = default;
 
 public:
-    virtual bool RenderText(TextBufferPtr text_buf) = 0;
+    virtual bool RenderText(text::TextBufferPtr text_buf) = 0;
 };
 
-} //namespace text
-} //namespace text
+using RenderPtr = std::shared_ptr<Render>;
+
+RenderPtr CreateRender();
+
+} //namespace render
+} //namespace ftdgl

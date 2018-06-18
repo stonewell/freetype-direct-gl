@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "pen.h"
+#include "markup.h"
 
 namespace ftdgl {
 namespace text {
@@ -14,10 +15,12 @@ public:
     virtual ~TextBuffer() = default;
 
 public:
-    virtual bool AddText(pen_s & pen, const std::wstring & text) = 0;
+    virtual bool AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) = 0;
 };
 
 using TextBufferPtr = std::shared_ptr<TextBuffer>;
 
+TextBufferPtr CreateTextBuffer();
+
 } //namespace text
-} //namespace text
+} //namespace ftdgl

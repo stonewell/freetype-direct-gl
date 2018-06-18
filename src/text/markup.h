@@ -6,9 +6,11 @@
 namespace ftdgl {
 namespace text {
 
-struct pen_s {
-    double x;
-    double y;
+struct markup_s {
+    color_s fore_color;
+    color_s back_color;
+
+    FontPtr font;
 };
 
 } //namespace text

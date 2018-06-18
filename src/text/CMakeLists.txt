@@ -1,5 +1,5 @@
 SET(text_src
-  text_buffer.h
+  text_buffer.h text_buffer.cxx
   color.h
   pen.h
 )
