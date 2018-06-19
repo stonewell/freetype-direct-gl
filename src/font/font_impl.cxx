@@ -175,11 +175,11 @@ void FontImpl::InitFont() {
         return;
 
     FT_Error error;
-    FT_Matrix matrix = {
-        (int)((1.0/HRES) * 0x10000L),
-        (int)((0.0)      * 0x10000L),
-        (int)((0.0)      * 0x10000L),
-        (int)((1.0)      * 0x10000L)};
+    // FT_Matrix matrix = {
+    //     (int)((1.0/HRES) * 0x10000L),
+    //     (int)((0.0)      * 0x10000L),
+    //     (int)((0.0)      * 0x10000L),
+    //     (int)((1.0)      * 0x10000L)};
 
     /* Load face */
     error = FT_New_Face(m_Library, m_FontDesc.file_name.c_str(), 0, &m_Face);
@@ -205,7 +205,7 @@ void FontImpl::InitFont() {
     }
 
     /* Set transform matrix */
-    FT_Set_Transform(m_Face, &matrix, NULL);
+    //FT_Set_Transform(m_Face, &matrix, NULL);
 
     m_FontFaceInitialized = true;
     return;

@@ -6,6 +6,8 @@
 
 #include <cassert>
 
+#include "opengl.h"
+
 #include "glyph_compiler.h"
 #include "err_msg.h"
 
@@ -45,6 +47,15 @@ static void AppendTriangle(compile_context_s * context,
 
 size_t compile_glyph(uint8_t * addr, int unitPerEM, FT_Outline & outline) {
     FT_Outline_Funcs callbacks;
+
+    const FT_Fixed multiplier = 65536L;
+
+    FT_Matrix matrix;
+
+    matrix.xx = 1L * multiplier;
+    matrix.xy = 0L * multiplier;
+    matrix.yx = 0L * multiplier;
+    matrix.yy = -1L * multiplier;
 
     compile_context_s context {.addr=addr, .size=0, .unitPerEM = unitPerEM};
 
@@ -124,17 +135,16 @@ int CubicToFunction(const FT_Vector *controlOne,
 static
 void AppendVertex(compile_context_s * context,
                   FT_Pos x, FT_Pos y,
-                  double s, double t)
+                  GLfloat s, GLfloat t)
 {
-    double * p = reinterpret_cast<double *>(context->addr);
-
-    *p++ = x / context->unitPerEM;
-    *p++ = y / context->unitPerEM;
+    GLfloat* p = reinterpret_cast<GLfloat*>(context->addr);
+    *p++ = (GLfloat)x / context->unitPerEM;
+    *p++ = (GLfloat)y / context->unitPerEM;
     *p++ = s;
     *p++ = t;
 
-    context->addr += sizeof(double) * 4;
-    context->size += sizeof(double) * 4;
+    context->addr += sizeof(GLfloat) * 4;
+    context->size += sizeof(GLfloat) * 4;
 }
 
 void AppendTriangle(compile_context_s * context,

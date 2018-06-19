@@ -11,4 +11,5 @@ TARGET_INCLUDE_DIRECTORIES(text PRIVATE
   "../font"
   "../utils"
   ${FREETYPE_INCLUDE_DIRS}
+  ${GLM_INCLUDE_DIR}
 )
