@@ -114,6 +114,12 @@ bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
                  1, &c[0]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(screen_quad) / sizeof(GLfloat) / 2);
 
+    glViewport(500, 0, 500, 220);
+    c = glm::vec4(1.0, .0, 1.0, 1.0);
+    glUniform4fv(glGetUniformLocation(program, "color"),
+                 1, &c[0]);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(screen_quad) / sizeof(GLfloat) / 2);
+
     glDisableVertexAttribArray(posAttrib);
     glUseProgram(0);
     return false;
