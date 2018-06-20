@@ -25,61 +25,6 @@ void init()
     buffer = ftdgl::text::CreateTextBuffer();
     render = ftdgl::render::CreateRender();
 
-    // ftdgl::text::color_s black  = {0.0, 0.0, 0.0, 1.0};
-    // ftdgl::text::color_s white  = {1.0, 1.0, 1.0, 1.0};
-    // ftdgl::text::color_s yellow = {1.0, 1.0, 0.0, 1.0};
-    // ftdgl::text::color_s grey   = {0.5, 0.5, 0.5, 1.0};
-    // ftdgl::text::color_s none   = {1.0, 1.0, 1.0, 0.0};
-
-    // ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Monospace:size=24");
-    // ftdgl::FontPtr f_small   = font_manager->CreateFontFromDesc("Monospace:size=10");
-    // ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=48:slant=italic");
-    // ftdgl::FontPtr f_bold     = font_manager->CreateFontFromDesc("Droid Serif:size=24:weight=200");
-    // ftdgl::FontPtr f_italic   = font_manager->CreateFontFromDesc("Droid Serif:size=24:slant=italic");
-    // ftdgl::FontPtr f_japanese = font_manager->CreateFontFromDesc("Droid Sans:size=18:lang=ja");
-    // ftdgl::FontPtr f_math     = font_manager->CreateFontFromDesc("DejaVu Sans:size=24");
-
-    // ftdgl::text::markup_s normal = {
-    //     .fore_color    = white, .back_color    = none,
-    //     .font = f_normal,
-    // };
-    // ftdgl::text::markup_s highlight = normal; highlight.back_color = grey;
-    // ftdgl::text::markup_s reverse   = normal; reverse.fore_color = black;
-    //                              reverse.back_color = white;
-    // ftdgl::text::markup_s small     = normal; small.font = f_small;
-    // ftdgl::text::markup_s big       = normal; big.font = f_big;
-    //                              big.fore_color = yellow;
-    // ftdgl::text::markup_s bold      = normal; bold.font = f_bold;
-    // ftdgl::text::markup_s italic    = normal; bold.font = f_italic;
-    // ftdgl::text::markup_s japanese  = normal; japanese.font = f_japanese;
-    // ftdgl::text::markup_s math      = normal; math.font = f_math;
-
-    // ftdgl::text::pen_s pen = {20, 200};
-
-    // // buffer->AddText(pen, normal, L"The");
-    // // buffer->AddText(pen, normal,    L" Quick");
-    // // buffer->AddText(pen, big,       L" brown ");
-    // // buffer->AddText(pen, reverse,   L" fox \n");
-    // // buffer->AddText(pen, italic,    L"jumps over ");
-    // // buffer->AddText(pen, bold,      L"the lazy ");
-    // // buffer->AddText(pen, normal,    L"dog.\n");
-    // // buffer->AddText(pen, small,     L"Now is the time for all good men "
-    // //                 L"to come to the aid of the party.\n");
-    // // buffer->AddText(pen, italic,    L"Ég get etið gler án þess að meiða mig.\n");
-    // // buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n");
-    // // buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ");
-    // buffer->AddText(pen, normal, L"T");
-}
-
-
-// ---------------------------------------------------------------- display ---
-void display( GLFWwindow* window )
-{
-    glClearColor(0.40,0.40,0.45,1.00);
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-    glColor4f(1.00,1.00,1.00,1.00);
-
     ftdgl::text::color_s black  = {0.0, 0.0, 0.0, 1.0};
     ftdgl::text::color_s white  = {1.0, 1.0, 1.0, 1.0};
     ftdgl::text::color_s yellow = {1.0, 1.0, 0.0, 1.0};
@@ -123,9 +68,19 @@ void display( GLFWwindow* window )
     // buffer->AddText(pen, italic,    L"Ég get etið gler án þess að meiða mig.\n");
     // buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n");
     // buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ");
-    buffer->AddText(pen, normal, L"c");
+    buffer->AddText(pen, normal, L"g");
+}
 
+
+// ---------------------------------------------------------------- display ---
+void display( GLFWwindow* window )
+{
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClearColor(0.40,0.40,0.45,1.00);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    glViewport(0, 0, 500 * 2, 220 * 2);
     render->RenderText(buffer);
 
     glfwSwapBuffers( window );
@@ -139,6 +94,8 @@ void reshape( GLFWwindow* window, int width, int height )
     (void)width;
     (void)height;
     glViewport(0, 0, width, height);
+
+    printf("w:%d, h:%d\n", width, height);
 }
 
 
