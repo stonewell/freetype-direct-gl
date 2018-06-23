@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
 
 #include "font_manager.h"
 #include "text_buffer.h"
@@ -19,10 +20,10 @@ ftdgl::FontManagerPtr font_manager;
 ftdgl::text::TextBufferPtr buffer;
 ftdgl::render::RenderPtr render;
 
-void init()
+void init(const ftdgl::viewport::viewport_s & viewport)
 {
     font_manager = ftdgl::CreateFontManager();
-    buffer = ftdgl::text::CreateTextBuffer();
+    buffer = ftdgl::text::CreateTextBuffer(viewport);
     render = ftdgl::render::CreateRender();
 
     ftdgl::text::color_s black  = {0.0, 0.0, 0.0, 1.0};
@@ -33,7 +34,7 @@ void init()
 
     ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Monospace:size=24");
     ftdgl::FontPtr f_small   = font_manager->CreateFontFromDesc("Monospace:size=10");
-    ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=48:slant=italic");
+    ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=96:slant=italic");
     ftdgl::FontPtr f_bold     = font_manager->CreateFontFromDesc("Droid Serif:size=24:weight=200");
     ftdgl::FontPtr f_italic   = font_manager->CreateFontFromDesc("Droid Serif:size=24:slant=italic");
     ftdgl::FontPtr f_japanese = font_manager->CreateFontFromDesc("Droid Sans:size=18:lang=ja");
@@ -68,7 +69,7 @@ void init()
     // buffer->AddText(pen, italic,    L"Ég get etið gler án þess að meiða mig.\n");
     // buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n");
     // buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ");
-    buffer->AddText(pen, normal, L"g");
+    buffer->AddText(pen, big, L"P");
 }
 
 
@@ -176,7 +177,22 @@ int main( int argc, char **argv )
     fprintf( stderr, "Using GLEW %s\n", glewGetString(GLEW_VERSION) );
 #endif
 
-    init();
+    int pixel_height = 0, pixel_width = 0;
+    glfwGetFramebufferSize(window, &pixel_width, &pixel_height);
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int widthMM, heightMM;
+    glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
+    float dpi = mode->width / (widthMM / 25.4);
+
+    std::cout << "w:" << pixel_width << ", h:" << pixel_height
+              << ", dpi:" << dpi << std::endl;
+
+    ftdgl::viewport::viewport_s viewport {
+        0, 0, pixel_width, pixel_height,
+                dpi
+    };
+
+    init(viewport);
 
     glfwShowWindow( window );
     reshape( window, 500, 220 );

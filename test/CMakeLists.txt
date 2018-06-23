@@ -20,6 +20,7 @@ TARGET_INCLUDE_DIRECTORIES(markup PRIVATE
      "../src/font"
      "../src/text"
      "../src/render"
+     "../src/viewport"
     $<TARGET_PROPERTY:glfw,INTERFACE_INCLUDE_DIRECTORIES>
     ${OPENGL_INCLUDE_DIR}
 )

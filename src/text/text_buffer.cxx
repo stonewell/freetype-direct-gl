@@ -35,11 +35,19 @@ glm::vec2 JITTER_PATTERN[] = {
 
 class TextBufferImpl : public TextBuffer {
 public:
+    TextBufferImpl(const viewport::viewport_s & viewport)
+        : m_Viewport {viewport} {
+    }
+
+    virtual ~TextBufferImpl() {
+    }
+
     virtual bool AddText(pen_s & pen, const markup_s & markup, const std::wstring & text);
     bool AddChar(pen_s & pen, const markup_s & markup, wchar_t ch);
 
     virtual uint32_t GetTexture() const { return m_RenderedTexture; }
 	GLuint m_RenderedTexture;
+    const viewport::viewport_s & m_Viewport;
 };
 
 bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) {
@@ -110,9 +118,7 @@ const char * vert_source = "\n"
         "varying vec2 _coord2;\n"
         "void main() {\n"
         "	_coord2 = position4.zw;\n"
-        "	//gl_Position = vec4(matrix3 * vec3(position4.xy, 1.0), 0.0).xywz;\n"
         "	gl_Position = matrix4 * vec4(position4.xy, 0.0, 1.0);\n"
-        "	//gl_Position = vec4(position4.xy, 0.0, 1.0);\n"
         "}\n";
 
 const char * frag_source = "\n"
@@ -133,8 +139,11 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     (void)markup;
     (void)ch;
 
-    glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(1, 1, 0));
+    float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
+    float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi;
+
+    glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-.5, -.5, 0));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize() / pt_width, markup.font->GetPtSize() / pt_height, 0));
     glm::mat4 transform = translate * scale;
 
     GLuint program = shader_load(vert_source, frag_source);
@@ -181,8 +190,8 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
 
 } //namespace impl
 
-TextBufferPtr CreateTextBuffer() {
-    return std::make_shared<impl::TextBufferImpl>();
+TextBufferPtr CreateTextBuffer(const viewport::viewport_s & viewport) {
+    return std::make_shared<impl::TextBufferImpl>(viewport);
 }
 
 } //namespace text

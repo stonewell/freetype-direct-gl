@@ -9,5 +9,6 @@ TARGET_INCLUDE_DIRECTORIES(render PRIVATE
   "../text"
   "../font"
   "../utils"
+  "../viewport"
   ${FREETYPE_INCLUDE_DIRS}
 )

@@ -5,6 +5,7 @@
 
 #include "pen.h"
 #include "markup.h"
+#include "viewport.h"
 
 namespace ftdgl {
 namespace text {
@@ -21,7 +22,7 @@ public:
 
 using TextBufferPtr = std::shared_ptr<TextBuffer>;
 
-TextBufferPtr CreateTextBuffer();
+TextBufferPtr CreateTextBuffer(const viewport::viewport_s & viewport);
 
 } //namespace text
 } //namespace ftdgl

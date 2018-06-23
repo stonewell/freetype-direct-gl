@@ -59,6 +59,9 @@ public:
     virtual GlyphPtr LoadGlyph(uint32_t codepoint);
     virtual bool LoadGlyphs(std::vector<uint32_t> codepoints,
                             Glyphs & glyphs);
+    virtual int GetPtSize() const {
+        return m_FontDesc.size;
+    }
 
 private:
     void InitFont();
