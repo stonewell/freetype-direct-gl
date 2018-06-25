@@ -29,17 +29,23 @@ public:
     }
 
 public:
-    void InitGlyph(FT_GlyphSlot & slot) {
+    void InitGlyph(const FT_GlyphSlot & slot) {
         (void)slot;
+        m_AdvanceX = slot->advance.x / 64.0;
+        m_AdvanceY = slot->advance.y / 64.0;
     }
 
 public:
     virtual uint32_t GetCodepoint() const { return m_Codepoint; }
     virtual uint8_t * GetAddr() const { return m_Addr; }
     virtual size_t GetSize() const { return m_Size; }
+    virtual float GetAdvanceX() const { return m_AdvanceX; }
+    virtual float GetAdvanceY() const { return m_AdvanceY; }
 
 private:
     uint32_t m_Codepoint;
+    float m_AdvanceX;
+    float m_AdvanceY;
     uint8_t * m_Addr;
     size_t m_Size;
 };

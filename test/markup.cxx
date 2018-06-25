@@ -37,7 +37,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=96:slant=italic");
     ftdgl::FontPtr f_bold     = font_manager->CreateFontFromDesc("Droid Serif:size=24:weight=200");
     ftdgl::FontPtr f_italic   = font_manager->CreateFontFromDesc("Droid Serif:size=24:slant=italic");
-    ftdgl::FontPtr f_japanese = font_manager->CreateFontFromDesc("Droid Sans:size=18:lang=ja");
+    ftdgl::FontPtr f_japanese = font_manager->CreateFontFromDesc("Droid Sans:size=36:lang=ja");
     ftdgl::FontPtr f_math     = font_manager->CreateFontFromDesc("DejaVu Sans:size=24");
 
     ftdgl::text::markup_s normal = {
@@ -57,19 +57,19 @@ void init(const ftdgl::viewport::viewport_s & viewport)
 
     ftdgl::text::pen_s pen = {20, 200};
 
-    // buffer->AddText(pen, normal, L"The");
-    // buffer->AddText(pen, normal,    L" Quick");
-    // buffer->AddText(pen, big,       L" brown ");
-    // buffer->AddText(pen, reverse,   L" fox \n");
-    // buffer->AddText(pen, italic,    L"jumps over ");
-    // buffer->AddText(pen, bold,      L"the lazy ");
-    // buffer->AddText(pen, normal,    L"dog.\n");
+    buffer->AddText(pen, normal, L"The");
+    buffer->AddText(pen, normal,    L" Quick");
+    buffer->AddText(pen, big,       L" brown ");
+    buffer->AddText(pen, reverse,   L" fox \n");
+    buffer->AddText(pen, italic,    L"jumps over ");
+    buffer->AddText(pen, bold,      L"the lazy ");
+    buffer->AddText(pen, normal,    L"dog.\n");
     // buffer->AddText(pen, small,     L"Now is the time for all good men "
     //                 L"to come to the aid of the party.\n");
     // buffer->AddText(pen, italic,    L"Ég get etið gler án þess að meiða mig.\n");
     // buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n");
     // buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ");
-    buffer->AddText(pen, big, L"P");
+    buffer->AddText(pen, big, L"pork");
 }
 
 
@@ -183,13 +183,18 @@ int main( int argc, char **argv )
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
     float dpi = mode->width / (widthMM / 25.4);
+    float dpi_height = (mode->height / (heightMM / 25.4));
 
     std::cout << "w:" << pixel_width << ", h:" << pixel_height
-              << ", dpi:" << dpi << std::endl;
+              << ", dpi:" << dpi
+              << ", " << dpi_height
+              << std::endl;
 
     ftdgl::viewport::viewport_s viewport {
-        0, 0, pixel_width, pixel_height,
-                dpi
+        0, 0,
+        pixel_width, pixel_height,
+        500, 220,
+        dpi, dpi_height
     };
 
     init(viewport);

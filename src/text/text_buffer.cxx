@@ -5,6 +5,8 @@
 
 #include "text_buffer.h"
 
+#include <iostream>
+
 namespace ftdgl {
 namespace text {
 namespace impl {
@@ -139,16 +141,31 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     (void)markup;
     (void)ch;
 
-    float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
-    float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi;
+    //TODO empty glyph
+    if (ch == L' ')
+        return true;
 
-    glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-.5, -.5, 0));
+    if (ch == L'\n') {
+        pen.y += markup.font->GetAscender() - markup.font->GetDescender();
+        pen.x = 0;
+        return true;
+    }
+
+    float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
+    float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi_height;
+
+    glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
+    glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, markup.font->GetDescender(), 0));
+    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2 * pen.x / m_Viewport.window_width, 2 * pen.y / m_Viewport.window_height, 0));
     glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize() / pt_width, markup.font->GetPtSize() / pt_height, 0));
-    glm::mat4 transform = translate * scale;
+    glm::mat4 transform = translate2 * translate1 * translate * scale;
 
     GLuint program = shader_load(vert_source, frag_source);
 
     auto glyph = markup.font->LoadGlyph(ch);
+
+    if (!glyph)
+        return true;
 
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
@@ -168,8 +185,13 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     GLint color_index = glGetUniformLocation(program, "color");
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
+        glm::mat4 translate3 = glm::translate(glm::mat4(1.0), glm::vec3(JITTER_PATTERN[i].x * 72 / m_Viewport.dpi / pt_width ,
+                                                                        JITTER_PATTERN[i].y * 72 / m_Viewport.dpi_height / pt_height,
+                                                                        0));
+        glm::mat4 transform_x = translate3 * transform;
+
         glUniformMatrix4fv(glGetUniformLocation(program, "matrix4"),
-                           1, GL_FALSE, &transform[0][0]);
+                           1, GL_FALSE, &transform_x[0][0]);
 
         if (i % 2 == 0) {
             c = glm::vec4(i == 0 ? 1.0 : 0.0,
@@ -185,6 +207,9 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
 
     glDisableVertexAttribArray(posAttrib);
     glUseProgram(0);
+
+    pen.x += glyph->GetAdvanceX();
+    //TOOD: kerning
     return true;
 }
 

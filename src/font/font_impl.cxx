@@ -63,11 +63,21 @@ public:
         return m_FontDesc.size;
     }
 
+    virtual float GetDescender() const {
+        return m_Descender;
+    }
+
+    virtual float GetAscender() const {
+        return m_Ascender;
+    }
+
 private:
     void InitFont();
     void FreeFont();
     bool OutlineExist();
 
+    float m_Descender;
+    float m_Ascender;
     bool m_FontFaceInitialized;
     font_desc_s m_FontDesc;
 
@@ -178,11 +188,6 @@ void FontImpl::InitFont() {
         return;
 
     FT_Error error;
-    // FT_Matrix matrix = {
-    //     (int)((1.0/HRES) * 0x10000L),
-    //     (int)((0.0)      * 0x10000L),
-    //     (int)((0.0)      * 0x10000L),
-    //     (int)((1.0)      * 0x10000L)};
 
     /* Load face */
     error = FT_New_Face(m_Library, m_FontDesc.file_name.c_str(), 0, &m_Face);
@@ -207,9 +212,8 @@ void FontImpl::InitFont() {
         goto cleanup_face;
     }
 
-    /* Set transform matrix */
-    //FT_Set_Transform(m_Face, &matrix, NULL);
-
+    m_Descender = (float)m_Face->descender / (float)m_Face->units_per_EM;
+    m_Ascender = (float)m_Face->ascender / (float)m_Face->units_per_EM;
     m_FontFaceInitialized = true;
     return;
 

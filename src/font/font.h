@@ -18,6 +18,8 @@ public:
     virtual bool LoadGlyphs(std::vector<uint32_t> codepoints,
                             Glyphs & glyphs) = 0;
     virtual int GetPtSize() const = 0;
+    virtual float GetDescender() const = 0;
+    virtual float GetAscender() const = 0;
 };
 
 using FontPtr = std::shared_ptr<Font>;
