@@ -39,68 +39,33 @@ class TextBufferImpl : public TextBuffer {
 public:
     TextBufferImpl(const viewport::viewport_s & viewport)
         : m_Viewport {viewport} {
+        Init();
     }
 
     virtual ~TextBufferImpl() {
+        Destroy();
     }
 
     virtual bool AddText(pen_s & pen, const markup_s & markup, const std::wstring & text);
     bool AddChar(pen_s & pen, const markup_s & markup, wchar_t ch);
 
     virtual uint32_t GetTexture() const { return m_RenderedTexture; }
+
+private:
 	GLuint m_RenderedTexture;
+	GLuint m_FrameBuffer;
     const viewport::viewport_s & m_Viewport;
+
+public:
+    void Init();
+    void Destroy();
 };
 
 bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) {
-	GLuint FramebufferName = 0;
-	glGenFramebuffers(1, &FramebufferName);
-	glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-
-	// The texture we're going to render to
-	glGenTextures(1, &m_RenderedTexture);
-
-	// "Bind" the newly created texture : all future texture functions will modify this texture
-	glBindTexture(GL_TEXTURE_2D, m_RenderedTexture);
-
-	// Give an empty image to OpenGL ( the last "0" means "empty" )
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, 500 * 2, 220 * 2, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-	// Poor filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// The depth buffer
-	GLuint depthrenderbuffer;
-	glGenRenderbuffers(1, &depthrenderbuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 500 * 2, 220 * 2);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
-
-	// Set "renderedTexture" as our colour attachement #0
-	glFramebufferTextureEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_RenderedTexture, 0);
-
-	// Set the list of draw buffers.
-	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-	glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-
-	// Always check that our framebuffer is ok
-	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        printf("frame buffer status error\n");
-		return false;
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-    glViewport(0, 0, 500 * 2, 220 * 2);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-
-    glClearColor(0,0,0,0);
-    //glClearColor(1.0,0.40,0.45,1.00);
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
     for(size_t i=0;i < text.length(); i++) {
         if (!AddChar(pen, markup, text[i])) {
@@ -141,24 +106,24 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     (void)markup;
     (void)ch;
 
+    float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
+    float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi_height;
+
     //TODO empty glyph
     if (ch == L' ')
         return true;
 
     if (ch == L'\n') {
-        pen.y += markup.font->GetAscender() - markup.font->GetDescender();
+        pen.y -= (markup.font->GetAscender() - markup.font->GetDescender()) * m_Viewport.window_height * markup.font->GetPtSize() / pt_height;
         pen.x = 0;
         return true;
     }
-
-    float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
-    float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi_height;
 
     glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
     glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, markup.font->GetDescender(), 0));
     glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2 * pen.x / m_Viewport.window_width, 2 * pen.y / m_Viewport.window_height, 0));
     glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize() / pt_width, markup.font->GetPtSize() / pt_height, 0));
-    glm::mat4 transform = translate2 * translate1 * translate * scale;
+    glm::mat4 transform = translate2 * translate * scale * translate1;
 
     GLuint program = shader_load(vert_source, frag_source);
 
@@ -211,6 +176,56 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     pen.x += glyph->GetAdvanceX();
     //TOOD: kerning
     return true;
+}
+
+void TextBufferImpl::Init() {
+	glGenFramebuffers(1, &m_FrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+
+	// The texture we're going to render to
+	glGenTextures(1, &m_RenderedTexture);
+
+	// "Bind" the newly created texture : all future texture functions will modify this texture
+	glBindTexture(GL_TEXTURE_2D, m_RenderedTexture);
+
+	// Give an empty image to OpenGL ( the last "0" means "empty" )
+	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, 500 * 2, 220 * 2, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+	// Poor filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// The depth buffer
+	GLuint depthrenderbuffer;
+	glGenRenderbuffers(1, &depthrenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 500 * 2, 220 * 2);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+
+	// Set "renderedTexture" as our colour attachement #0
+	glFramebufferTextureEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_RenderedTexture, 0);
+
+	// Set the list of draw buffers.
+	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+	glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+	// Always check that our framebuffer is ok
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        printf("frame buffer status error\n");
+        return;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+    glClearColor(0,0,0,0);
+    //glClearColor(1.0,0.40,0.45,1.00);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void TextBufferImpl::Destroy() {
+    glDeleteFramebuffers(1, &m_FrameBuffer);
 }
 
 } //namespace impl
