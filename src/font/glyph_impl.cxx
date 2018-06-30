@@ -17,8 +17,9 @@ namespace impl {
 
 class GlyphImpl : public Glyph {
 public:
-    GlyphImpl(uint32_t codepoint, FT_GlyphSlot & slot, uint8_t * addr, size_t size)
-        : m_Codepoint{codepoint}
+    GlyphImpl(uint32_t codepoint, int unitPerEM, FT_GlyphSlot & slot, uint8_t * addr, size_t size)
+        : m_UnitPerEM{unitPerEM}
+        , m_Codepoint{codepoint}
         , m_Addr{addr}
         , m_Size{size}
     {
@@ -30,9 +31,8 @@ public:
 
 public:
     void InitGlyph(const FT_GlyphSlot & slot) {
-        (void)slot;
-        m_AdvanceX = slot->advance.x / 64.0;
-        m_AdvanceY = slot->advance.y / 64.0;
+        m_AdvanceX = slot->advance.x / (float)m_UnitPerEM;
+        m_AdvanceY = slot->advance.y / (float)m_UnitPerEM;
     }
 
 public:
@@ -41,8 +41,10 @@ public:
     virtual size_t GetSize() const { return m_Size; }
     virtual float GetAdvanceX() const { return m_AdvanceX; }
     virtual float GetAdvanceY() const { return m_AdvanceY; }
+    virtual bool NeedDraw() const { return m_Addr != nullptr; }
 
 private:
+    int m_UnitPerEM;
     uint32_t m_Codepoint;
     float m_AdvanceX;
     float m_AdvanceY;
@@ -50,14 +52,35 @@ private:
     size_t m_Size;
 };
 
+static
+bool OutlineExist(FT_GlyphSlot & slot) {
+    FT_Outline &outline = slot->outline;
+
+    if (slot->format != FT_GLYPH_FORMAT_OUTLINE)
+        return false; // Should never happen.  Just an extra check.
+
+    if (outline.n_contours <= 0 || outline.n_points <= 0)
+        return false; // Can happen for some font files.
+
+    FT_Error error = FT_Outline_Check(&outline);
+
+    return !error;
+}
+
 GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, int unitPerEM, FT_GlyphSlot & slot) {
-    uint8_t * addr = mem_buf->Begin();
+    uint8_t * addr = nullptr;
 
-    size_t size = compile_glyph(addr, unitPerEM, slot->outline);
+    size_t size = 0;
 
-    mem_buf->End(size);
 
-    return std::make_shared<GlyphImpl>(codepoint, slot, addr, size);
+    if (OutlineExist(slot)) {
+        addr = mem_buf->Begin();
+        size = compile_glyph(addr, unitPerEM, slot->outline);
+
+        mem_buf->End(size);
+    }
+
+    return std::make_shared<GlyphImpl>(codepoint, unitPerEM, slot, addr, size);
 }
 
 } //namespace impl

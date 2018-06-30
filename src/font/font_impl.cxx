@@ -74,7 +74,6 @@ public:
 private:
     void InitFont();
     void FreeFont();
-    bool OutlineExist();
 
     float m_Descender;
     float m_Ascender;
@@ -229,25 +228,6 @@ void FontImpl::FreeFont() {
     FT_Done_Face( m_Face );
 }
 
-bool FontImpl::OutlineExist() {
-    FT_GlyphSlot slot = m_Face->glyph;
-    FT_Outline &outline = slot->outline;
-
-    if (slot->format != FT_GLYPH_FORMAT_OUTLINE)
-        return false; // Should never happen.  Just an extra check.
-
-    if (outline.n_contours <= 0 || outline.n_points <= 0)
-        return false; // Can happen for some font files.
-
-    FT_Error error = FT_Outline_Check(&outline);
-
-    if(error) {
-        err_msg(error, __LINE__);
-    }
-
-    return !error;
-}
-
 GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
     auto it = m_Glyphs.find(codepoint);
 
@@ -261,10 +241,6 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
                                    FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP);
     if(error) {
         err_msg(error, __LINE__);
-        return GlyphPtr {};
-    }
-
-    if (!OutlineExist()) {
         return GlyphPtr {};
     }
 

@@ -13,6 +13,7 @@ public:
     virtual size_t GetSize() const = 0;
     virtual float GetAdvanceX() const = 0;
     virtual float GetAdvanceY() const = 0;
+    virtual bool NeedDraw() const = 0;
 };
 
 using GlyphPtr = std::shared_ptr<Glyph>;

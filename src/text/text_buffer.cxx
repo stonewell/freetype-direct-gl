@@ -47,14 +47,15 @@ public:
     }
 
     virtual bool AddText(pen_s & pen, const markup_s & markup, const std::wstring & text);
-    bool AddChar(pen_s & pen, const markup_s & markup, wchar_t ch);
-
     virtual uint32_t GetTexture() const { return m_RenderedTexture; }
 
 private:
+    bool AddChar(pen_s & pen, const markup_s & markup, wchar_t ch);
+
 	GLuint m_RenderedTexture;
 	GLuint m_FrameBuffer;
     const viewport::viewport_s & m_Viewport;
+    double m_OriginX;
 
 public:
     void Init();
@@ -66,6 +67,8 @@ bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::ws
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
+
+    m_OriginX = pen.x;
 
     for(size_t i=0;i < text.length(); i++) {
         if (!AddChar(pen, markup, text[i])) {
@@ -109,13 +112,9 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
     float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi_height;
 
-    //TODO empty glyph
-    if (ch == L' ')
-        return true;
-
     if (ch == L'\n') {
         pen.y -= (markup.font->GetAscender() - markup.font->GetDescender()) * m_Viewport.window_height * markup.font->GetPtSize() / pt_height;
-        pen.x = 0;
+        pen.x = m_OriginX;
         return true;
     }
 
@@ -131,6 +130,13 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
 
     if (!glyph)
         return true;
+
+    float adv_x = glyph->GetAdvanceX() * markup.font->GetPtSize() / pt_width * m_Viewport.window_width / 2;
+
+    if (!glyph->NeedDraw()) {
+        pen.x += adv_x;
+        return true;
+    }
 
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
@@ -173,7 +179,8 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     glDisableVertexAttribArray(posAttrib);
     glUseProgram(0);
 
-    pen.x += glyph->GetAdvanceX();
+    pen.x += adv_x;
+
     //TOOD: kerning
     return true;
 }

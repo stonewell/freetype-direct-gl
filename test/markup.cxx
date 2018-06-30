@@ -60,16 +60,16 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     buffer->AddText(pen, normal, L"The");
     buffer->AddText(pen, normal,    L" Quick");
     buffer->AddText(pen, big,       L" brown ");
-    buffer->AddText(pen, reverse,   L" fox \n");
+    buffer->AddText(pen, reverse,   L" fox \n"); pen.x = 20;
     buffer->AddText(pen, italic,    L"jumps over ");
     buffer->AddText(pen, bold,      L"the lazy ");
-    buffer->AddText(pen, normal,    L"dog.\n");
+    buffer->AddText(pen, normal,    L"dog.\n"); pen.x = 20;
     buffer->AddText(pen, small,     L"Now is the time for all good men "
-                    L"to come to the aid of the party.\n");
-    buffer->AddText(pen, italic,    L"Ég get etið gler án þess að meiða mig.\n");
-    buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n");
-    buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ\n");
-    buffer->AddText(pen, big, L"pork");
+                    L"to come to the aid of the party.\n"); pen.x = 20;
+    buffer->AddText(pen, italic,    L"Ég get etið gler án þess að meiða mig.\n"); pen.x = 20;
+    buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n"); pen.x = 20;
+    buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ\n"); pen.x = 20;
+    buffer->AddText(pen, big, L"pork"); pen.x = 20;
 }
 
 
