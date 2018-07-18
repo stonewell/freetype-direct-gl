@@ -4,6 +4,7 @@
 #include "opengl.h"
 
 #include "text_buffer.h"
+#include "program.h"
 
 #include <iostream>
 
@@ -57,7 +58,12 @@ private:
     const viewport::viewport_s & m_Viewport;
     double m_OriginX;
 
-public:
+    ProgramPtr m_ProgramId;
+    GLuint m_Position4Index;
+    GLuint m_ColorIndex;
+    GLuint m_Matrix4Index;
+
+private:
     void Init();
     void Destroy();
 };
@@ -81,29 +87,6 @@ bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::ws
     return true;
 }
 
-const char * vert_source = "\n"
-        "uniform mat3 matrix3;\n"
-        "uniform mat4 matrix4;\n"
-        "attribute vec4 position4;\n"
-        "varying vec2 _coord2;\n"
-        "void main() {\n"
-        "	_coord2 = position4.zw;\n"
-        "	gl_Position = matrix4 * vec4(position4.xy, 0.0, 1.0);\n"
-        "}\n";
-
-const char * frag_source = "\n"
-        "uniform vec4 color;\n"
-        "varying vec2 _coord2;\n"
-        "void main() {\n"
-        "	if (_coord2.x * _coord2.x - _coord2.y > 0.0) {\n"
-        "		discard;\n"
-        "	}\n"
-        "\n"
-        "	// Upper 4 bits: front faces\n"
-        "	// Lower 4 bits: back faces\n"
-        "	gl_FragColor = color * (gl_FrontFacing ? 16.0 / 255.0 : 1.0 / 255.0);\n"
-        "}\n";
-
 bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     (void)pen;
     (void)markup;
@@ -124,8 +107,6 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize() / pt_width, markup.font->GetPtSize() / pt_height, 0));
     glm::mat4 transform = translate2 * translate * scale * translate1;
 
-    GLuint program = shader_load(vert_source, frag_source);
-
     auto glyph = markup.font->LoadGlyph(ch);
 
     if (!glyph)
@@ -144,16 +125,12 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
 	glBufferData(GL_ARRAY_BUFFER, glyph->GetSize(),
                  glyph->GetAddr(), GL_STATIC_DRAW);
 
-    glUseProgram(program);
+    glUseProgram(*m_ProgramId);
 
     auto c = glm::vec4(0.0, 0.0, 0.0, 0.0);
 
-    GLint posAttrib = glGetAttribLocation(program, "position4");
-    glEnableVertexAttribArray(posAttrib);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(posAttrib, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-    GLint color_index = glGetUniformLocation(program, "color");
+    glEnableVertexAttribArray(m_Position4Index);
+    glVertexAttribPointer(m_Position4Index, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
         glm::mat4 translate3 = glm::translate(glm::mat4(1.0), glm::vec3(JITTER_PATTERN[i].x * 72 / m_Viewport.dpi / pt_width ,
@@ -161,7 +138,7 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
                                                                         0));
         glm::mat4 transform_x = translate3 * transform;
 
-        glUniformMatrix4fv(glGetUniformLocation(program, "matrix4"),
+        glUniformMatrix4fv(m_Matrix4Index,
                            1, GL_FALSE, &transform_x[0][0]);
 
         if (i % 2 == 0) {
@@ -171,12 +148,12 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
                           0.0);
         }
 
-        glUniform4fv(color_index, 1, &c[0]);
+        glUniform4fv(m_ColorIndex, 1, &c[0]);
 
 		glDrawArrays(GL_TRIANGLES, 0, glyph->GetSize() / sizeof(GLfloat) / 4);
     }
 
-    glDisableVertexAttribArray(posAttrib);
+    glDisableVertexAttribArray(m_Position4Index);
     glUseProgram(0);
 
     pen.x += adv_x;
@@ -196,7 +173,7 @@ void TextBufferImpl::Init() {
 	glBindTexture(GL_TEXTURE_2D, m_RenderedTexture);
 
 	// Give an empty image to OpenGL ( the last "0" means "empty" )
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, 500 * 2, 220 * 2, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, m_Viewport.pixel_width, m_Viewport.pixel_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 
 	// Poor filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -208,7 +185,7 @@ void TextBufferImpl::Init() {
 	GLuint depthrenderbuffer;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 500 * 2, 220 * 2);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_Viewport.pixel_width, m_Viewport.pixel_height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
 	// Set "renderedTexture" as our colour attachement #0
@@ -226,13 +203,23 @@ void TextBufferImpl::Init() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
     glClearColor(0,0,0,0);
-    //glClearColor(1.0,0.40,0.45,1.00);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    m_ProgramId = CreateTextBufferProgram();
+
+    glUseProgram(*m_ProgramId);
+
+    m_Matrix4Index = glGetUniformLocation(*m_ProgramId, "matrix4");
+    m_ColorIndex = glGetUniformLocation(*m_ProgramId, "color");
+    m_Position4Index = glGetAttribLocation(*m_ProgramId, "position4");
+
+    glUseProgram(0);
 }
 
 void TextBufferImpl::Destroy() {
     glDeleteFramebuffers(1, &m_FrameBuffer);
+    glDeleteTextures(1, &m_RenderedTexture);
 }
 
 } //namespace impl
