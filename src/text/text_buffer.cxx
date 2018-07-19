@@ -95,8 +95,10 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
     float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi_height;
 
+    auto adv_y = (markup.font->GetAscender() - markup.font->GetDescender()) * m_Viewport.window_height * markup.font->GetPtSize() / pt_height / 2;
+
     if (ch == L'\n') {
-        pen.y -= (markup.font->GetAscender() - markup.font->GetDescender()) * m_Viewport.window_height * markup.font->GetPtSize() / pt_height;
+        pen.y -= adv_y;
         pen.x = m_OriginX;
         return true;
     }

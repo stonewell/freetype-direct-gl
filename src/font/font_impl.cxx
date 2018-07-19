@@ -71,12 +71,17 @@ public:
         return m_Ascender;
     }
 
+    virtual float GetHeight() const {
+        return m_Height;
+    }
+
 private:
     void InitFont();
     void FreeFont();
 
     float m_Descender;
     float m_Ascender;
+    float m_Height;
     bool m_FontFaceInitialized;
     font_desc_s m_FontDesc;
 
@@ -213,6 +218,8 @@ void FontImpl::InitFont() {
 
     m_Descender = (float)m_Face->descender / (float)m_Face->units_per_EM;
     m_Ascender = (float)m_Face->ascender / (float)m_Face->units_per_EM;
+    m_Height = (float)m_Face->height / (float)m_Face->units_per_EM;
+
     m_FontFaceInitialized = true;
     return;
 
