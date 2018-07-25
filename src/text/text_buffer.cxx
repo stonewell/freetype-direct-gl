@@ -66,9 +66,47 @@ private:
 private:
     void Init();
     void Destroy();
+
+    void CalculateBufferSize(const markup_s & markup,
+                             const std::wstring & text,
+                             uint32_t & vertex_buffer_size,
+                             uint32_t & matrix_buffer_size);
 };
 
+typedef struct __matrix_s {
+    glm::mat4 transform;
+    glm::vec4 color;
+} matrix_s;
+
+void TextBufferImpl::CalculateBufferSize(const markup_s & markup,
+                                         const std::wstring & text,
+                                         uint32_t & vertex_buffer_size,
+                                         uint32_t & matrix_buffer_size) {
+
+    vertex_buffer_size = 0;
+    matrix_buffer_size = 0;
+
+    for(size_t i=0;i < text.length(); i++) {
+        if (text[i] == '\n') {
+            continue;
+        }
+
+        auto glyph = markup.font->LoadGlyph(text[i]);
+
+        if (!glyph || !glyph->NeedDraw())
+            continue;
+
+        vertex_buffer_size += glyph->GetSize();
+        matrix_buffer_size += sizeof(JITTER_PATTERN) / sizeof(glm::vec2) * sizeof(matrix_s);
+    }
+}
+
 bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) {
+    uint32_t vertex_buffer_size = 0;
+    uint32_t matrix_buffer_size = 0;
+
+    CalculateBufferSize(markup, text, vertex_buffer_size, matrix_buffer_size);
+
     glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 
     glEnable(GL_BLEND);
@@ -105,9 +143,12 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
 
     glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
     glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, markup.font->GetDescender(), 0));
-    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2 * pen.x / m_Viewport.window_width, 2 * pen.y / m_Viewport.window_height, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize() / pt_width, markup.font->GetPtSize() / pt_height, 0));
-    glm::mat4 transform = translate2 * translate * scale * translate1;
+    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2.0 * pen.x / m_Viewport.window_width, 2.0 * pen.y / m_Viewport.window_height, 0));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / pt_width, 1.0 / pt_height, 0));
+
+    glm::mat4 scale_font = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize(), markup.font->GetPtSize(), 0));
+
+    glm::mat4 transform = translate2 * translate * scale * scale_font * translate1;
 
     auto glyph = markup.font->LoadGlyph(ch);
 
