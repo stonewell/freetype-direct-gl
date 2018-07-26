@@ -1,5 +1,7 @@
 #pragma once
 
+#include "font.h"
+
 namespace ftdgl {
 namespace viewport {
 struct viewport_s {
@@ -11,6 +13,8 @@ struct viewport_s {
     int window_height;
     float dpi;
     float dpi_height;
+
+    double FontSizeToViewport(const FontPtr & font, double v, bool horz) const;
 };
 } //namespace viewport
 } //namespace ftdgl

@@ -133,7 +133,9 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
     float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi_height;
 
-    auto adv_y = (markup.font->GetAscender() - markup.font->GetDescender()) * m_Viewport.window_height * markup.font->GetPtSize() / pt_height / 2;
+    auto adv_y = m_Viewport.FontSizeToViewport(markup.font,
+                                               markup.font->GetAscender() - markup.font->GetDescender(),
+                                               false);
 
     if (ch == L'\n') {
         pen.y -= adv_y;
@@ -155,7 +157,7 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     if (!glyph)
         return true;
 
-    float adv_x = glyph->GetAdvanceX() * markup.font->GetPtSize() / pt_width * m_Viewport.window_width / 2;
+    auto adv_x = m_Viewport.FontSizeToViewport(markup.font, glyph->GetAdvanceX(), true);
 
     if (!glyph->NeedDraw()) {
         pen.x += adv_x;
