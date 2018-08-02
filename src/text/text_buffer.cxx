@@ -49,6 +49,7 @@ public:
 
     virtual bool AddText(pen_s & pen, const markup_s & markup, const std::wstring & text);
     virtual uint32_t GetTexture() const { return m_RenderedTexture; }
+    virtual void Clear();
 
 private:
     bool AddChar(pen_s & pen, const markup_s & markup, wchar_t ch);
@@ -265,6 +266,13 @@ void TextBufferImpl::Init() {
 void TextBufferImpl::Destroy() {
     glDeleteFramebuffers(1, &m_FrameBuffer);
     glDeleteTextures(1, &m_RenderedTexture);
+}
+
+void TextBufferImpl::Clear() {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+    glClearColor(0,0,0,0);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 } //namespace impl

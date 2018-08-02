@@ -17,6 +17,7 @@ public:
 
 public:
     virtual bool AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) = 0;
+    virtual void Clear() = 0;
     virtual uint32_t GetTexture() const = 0;
 };
 
