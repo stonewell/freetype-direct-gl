@@ -101,6 +101,13 @@ void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
                 markup.fore_color.b,
                 markup.fore_color.a
             },
+
+            {
+                markup.back_color.r,
+                markup.back_color.g,
+                markup.back_color.b,
+                markup.back_color.a
+            },
         });
 }
 

@@ -25,11 +25,15 @@ public:
 
 private:
     ProgramPtr m_Program;
+    ProgramPtr m_ProgramBackground;
 	GLuint m_Vertexbuffer;
     GLuint m_RenderTextureIndex;
     GLuint m_ColorIndex;
     GLuint m_Position2Index;
     GLuint m_RectIndex;
+    GLuint m_ColorBackgroundIndex;
+    GLuint m_Position2BackgroundIndex;
+    GLuint m_RectBackgroundIndex;
 
 private:
     void Init();
@@ -46,6 +50,7 @@ const GLfloat screen_quad[] = {
 
 void RenderImpl::Init() {
     m_Program = CreateRenderProgram();
+    m_ProgramBackground = CreateRenderBackgroundProgram();
 
 	glGenBuffers(1, &m_Vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, m_Vertexbuffer);
@@ -61,6 +66,14 @@ void RenderImpl::Init() {
     m_RectIndex = glGetUniformLocation(*m_Program, "rect");
 
     glUseProgram(0);
+
+    glUseProgram(*m_ProgramBackground);
+
+    m_Position2BackgroundIndex = glGetAttribLocation(*m_ProgramBackground, "position2");
+    m_ColorBackgroundIndex = glGetUniformLocation(*m_ProgramBackground, "color");
+    m_RectBackgroundIndex = glGetUniformLocation(*m_ProgramBackground, "rect");
+
+    glUseProgram(0);
 }
 
 void RenderImpl::Destroy() {
@@ -70,10 +83,36 @@ void RenderImpl::Destroy() {
 bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
     auto c = glm::vec4(0.0, 0.0, 0.0, 0.0);
     auto rect = glm::vec4(0.0, 0.0, 1., 1.0);
-
-    GLuint render_texture = text_buf->GetTexture();
+    auto count = text_buf->GetTextAttrCount();
+    auto text_attr = text_buf->GetTextAttr();
 
     glEnable(GL_BLEND);
+
+    //draw background
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glUseProgram(*m_ProgramBackground);
+	glBindBuffer(GL_ARRAY_BUFFER, m_Vertexbuffer);
+
+    glEnableVertexAttribArray(m_Position2BackgroundIndex);
+    glVertexAttribPointer(m_Position2BackgroundIndex, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    for(uint32_t i = 0;i < count; i++, text_attr++) {
+        if (text_attr->back_color[3] == 0)
+            continue;
+
+        c = glm::vec4(text_attr->back_color[0], text_attr->back_color[1], text_attr->back_color[2], text_attr->back_color[3]);
+        rect = glm::vec4(text_attr->bounds[0], text_attr->bounds[1], text_attr->bounds[2], text_attr->bounds[3]);
+
+        glUniform4fv(m_ColorBackgroundIndex, 1, &c[0]);
+        glUniform4fv(m_RectBackgroundIndex, 1, &rect[0]);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(screen_quad) / sizeof(GLfloat) / 2);
+    }
+
+    //draw foreground
+    GLuint render_texture = text_buf->GetTexture();
+
     glBlendFunc(GL_ZERO, GL_SRC_COLOR);
 
     glUseProgram(*m_Program);
@@ -81,6 +120,9 @@ bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
 
     glEnableVertexAttribArray(m_Position2Index);
     glVertexAttribPointer(m_Position2Index, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    c = glm::vec4(0.0, 0.0, 0.0, 0.0);
+    rect = glm::vec4(0.0, 0.0, 1., 1.0);
 
     glUniform4fv(m_ColorIndex, 1, &c[0]);
     glUniform4fv(m_RectIndex, 1, &rect[0]);
@@ -93,9 +135,7 @@ bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
 
     glBlendFunc(GL_ONE, GL_ONE);
 
-    auto count = text_buf->GetTextAttrCount();
-    auto text_attr = text_buf->GetTextAttr();
-
+    text_attr = text_buf->GetTextAttr();
     for(uint32_t i = 0;i < count; i++, text_attr++) {
         c = glm::vec4(text_attr->color[0], text_attr->color[1], text_attr->color[2], text_attr->color[3]);
         rect = glm::vec4(text_attr->bounds[0], text_attr->bounds[1], text_attr->bounds[2], text_attr->bounds[3]);

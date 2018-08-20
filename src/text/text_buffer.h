@@ -13,6 +13,7 @@ namespace text {
 typedef struct  __text_attr_s {
     double bounds[4];
     double color[4];
+    double back_color[4];
 } text_attr_s;
 
 class TextBuffer {

@@ -3,6 +3,7 @@ SET(utils_src
   err_msg.h err_msg.cxx
   shader.h shader.cxx
   program.h program_text_buffer.cxx program_render.cxx program.cxx
+  program_render_background.cxx
 )
 
 ADD_LIBRARY(utils OBJECT ${utils_src})
