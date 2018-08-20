@@ -7,6 +7,7 @@
 #include "program.h"
 
 #include <iostream>
+#include <vector>
 
 namespace ftdgl {
 namespace text {
@@ -50,9 +51,14 @@ public:
     virtual bool AddText(pen_s & pen, const markup_s & markup, const std::wstring & text);
     virtual uint32_t GetTexture() const { return m_RenderedTexture; }
     virtual void Clear();
+    virtual uint32_t GetTextAttrCount() const { return m_TextAttribs.size(); }
+    virtual const text_attr_s * GetTextAttr() const { return &m_TextAttribs[0]; }
 
 private:
-    bool AddChar(pen_s & pen, const markup_s & markup, wchar_t ch);
+    bool AddChar(pen_s & pen,
+                 const markup_s & markup,
+                 const viewport::viewport_s & viewport,
+                 wchar_t ch);
 
 	GLuint m_RenderedTexture;
 	GLuint m_FrameBuffer;
@@ -64,50 +70,41 @@ private:
     GLuint m_ColorIndex;
     GLuint m_Matrix4Index;
 
+    std::vector<text_attr_s> m_TextAttribs;
+
 private:
     void Init();
     void Destroy();
-
-    void CalculateBufferSize(const markup_s & markup,
-                             const std::wstring & text,
-                             uint32_t & vertex_buffer_size,
-                             uint32_t & matrix_buffer_size);
+    void AddTextAttr(const pen_s & pen, const markup_s & markup,
+                     const viewport::viewport_s & viewport);
 };
 
-typedef struct __matrix_s {
-    glm::mat4 transform;
-    glm::vec4 color;
-} matrix_s;
 
-void TextBufferImpl::CalculateBufferSize(const markup_s & markup,
-                                         const std::wstring & text,
-                                         uint32_t & vertex_buffer_size,
-                                         uint32_t & matrix_buffer_size) {
+void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
+                                 const viewport::viewport_s & viewport) {
+    auto adv_y = viewport.FontSizeToViewport(markup.font,
+                                             markup.font->GetAscender() - markup.font->GetDescender(),
+                                             false);
 
-    vertex_buffer_size = 0;
-    matrix_buffer_size = 0;
+    m_TextAttribs.push_back(
+        {
+            {
+                m_OriginX / viewport.window_width,
+                (pen.y - adv_y) / viewport.window_height,
+                pen.x / viewport.window_width,
+                pen.y / viewport.window_height
+            },
 
-    for(size_t i=0;i < text.length(); i++) {
-        if (text[i] == '\n') {
-            continue;
-        }
-
-        auto glyph = markup.font->LoadGlyph(text[i]);
-
-        if (!glyph || !glyph->NeedDraw())
-            continue;
-
-        vertex_buffer_size += glyph->GetSize();
-        matrix_buffer_size += sizeof(JITTER_PATTERN) / sizeof(glm::vec2) * sizeof(matrix_s);
-    }
+            {
+                markup.fore_color.r,
+                markup.fore_color.g,
+                markup.fore_color.b,
+                markup.fore_color.a
+            },
+        });
 }
 
 bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) {
-    uint32_t vertex_buffer_size = 0;
-    uint32_t matrix_buffer_size = 0;
-
-    CalculateBufferSize(markup, text, vertex_buffer_size, matrix_buffer_size);
-
     glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 
     glEnable(GL_BLEND);
@@ -116,37 +113,42 @@ bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::ws
     m_OriginX = pen.x;
 
     for(size_t i=0;i < text.length(); i++) {
-        if (!AddChar(pen, markup, text[i])) {
+        if (!AddChar(pen, markup, m_Viewport, text[i])) {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             return false;
         }
     }
 
+    if (pen.x != m_OriginX)
+        AddTextAttr(pen, markup, m_Viewport);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return true;
 }
 
-bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
-    (void)pen;
-    (void)markup;
-    (void)ch;
+bool TextBufferImpl::AddChar(pen_s & pen,
+                             const markup_s & markup,
+                             const viewport::viewport_s & viewport,
+                             wchar_t ch) {
+    float pt_width = viewport.pixel_width * 72 / viewport.dpi;
+    float pt_height = viewport.pixel_height * 72 / viewport.dpi_height;
 
-    float pt_width = m_Viewport.pixel_width * 72 / m_Viewport.dpi;
-    float pt_height = m_Viewport.pixel_height * 72 / m_Viewport.dpi_height;
-
-    auto adv_y = m_Viewport.FontSizeToViewport(markup.font,
-                                               markup.font->GetAscender() - markup.font->GetDescender(),
-                                               false);
+    auto adv_y = viewport.FontSizeToViewport(markup.font,
+                                             markup.font->GetAscender() - markup.font->GetDescender(),
+                                             false);
 
     if (ch == L'\n') {
+        if (pen.x != m_OriginX)
+            AddTextAttr(pen, markup, viewport);
+
         pen.y -= adv_y;
         pen.x = m_OriginX;
         return true;
     }
 
     glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
-    glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, markup.font->GetDescender(), 0));
-    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2.0 * pen.x / m_Viewport.window_width, 2.0 * pen.y / m_Viewport.window_height, 0));
+    glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, -markup.font->GetAscender(), 0));
+    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2.0 * pen.x / viewport.window_width, 2.0 * pen.y / viewport.window_height, 0));
     glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / pt_width, 1.0 / pt_height, 0));
 
     glm::mat4 scale_font = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize(), markup.font->GetPtSize(), 0));
@@ -158,7 +160,7 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     if (!glyph)
         return true;
 
-    auto adv_x = m_Viewport.FontSizeToViewport(markup.font, glyph->GetAdvanceX(), true);
+    auto adv_x = viewport.FontSizeToViewport(markup.font, glyph->GetAdvanceX(), true);
 
     if (!glyph->NeedDraw()) {
         pen.x += adv_x;
@@ -179,8 +181,8 @@ bool TextBufferImpl::AddChar(pen_s & pen, const markup_s & markup, wchar_t ch) {
     glVertexAttribPointer(m_Position4Index, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
-        glm::mat4 translate3 = glm::translate(glm::mat4(1.0), glm::vec3(JITTER_PATTERN[i].x * 72 / m_Viewport.dpi / pt_width ,
-                                                                        JITTER_PATTERN[i].y * 72 / m_Viewport.dpi_height / pt_height,
+        glm::mat4 translate3 = glm::translate(glm::mat4(1.0), glm::vec3(JITTER_PATTERN[i].x * 72 / viewport.dpi / pt_width ,
+                                                                        JITTER_PATTERN[i].y * 72 / viewport.dpi_height / pt_height,
                                                                         0));
         glm::mat4 transform_x = translate3 * transform;
 

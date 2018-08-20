@@ -6,6 +6,8 @@
 
 #include "program.h"
 
+#include <iostream>
+
 namespace ftdgl {
 namespace render {
 namespace impl {
@@ -36,7 +38,10 @@ private:
 
 static
 const GLfloat screen_quad[] = {
-    -1, -1, 1, -1, -1, 1, 1, 1
+    -1, -1,
+    1, -1,
+    -1, 1,
+    1, 1
 };
 
 void RenderImpl::Init() {
@@ -64,7 +69,7 @@ void RenderImpl::Destroy() {
 
 bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
     auto c = glm::vec4(0.0, 0.0, 0.0, 0.0);
-    const auto rect = glm::vec4(0.0, 0.0, 1.0, 1.0);
+    auto rect = glm::vec4(0.0, 0.0, 1., 1.0);
 
     GLuint render_texture = text_buf->GetTexture();
 
@@ -88,10 +93,18 @@ bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
 
     glBlendFunc(GL_ONE, GL_ONE);
 
-    c = glm::vec4(.0, .0, 1.0, 1.0);
+    auto count = text_buf->GetTextAttrCount();
+    auto text_attr = text_buf->GetTextAttr();
 
-    glUniform4fv(m_ColorIndex, 1, &c[0]);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(screen_quad) / sizeof(GLfloat) / 2);
+    for(uint32_t i = 0;i < count; i++, text_attr++) {
+        c = glm::vec4(text_attr->color[0], text_attr->color[1], text_attr->color[2], text_attr->color[3]);
+        rect = glm::vec4(text_attr->bounds[0], text_attr->bounds[1], text_attr->bounds[2], text_attr->bounds[3]);
+
+        glUniform4fv(m_ColorIndex, 1, &c[0]);
+        glUniform4fv(m_RectIndex, 1, &rect[0]);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(screen_quad) / sizeof(GLfloat) / 2);
+    }
 
     glDisableVertexAttribArray(m_Position2Index);
 
