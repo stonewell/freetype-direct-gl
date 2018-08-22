@@ -8,18 +8,22 @@ ProgramPtr g_RenderProgram = {};
 static
 const char * vert_source = "\n"
         "attribute vec2 position2;\n"
+        "attribute vec4 rect;\n"
+        "attribute vec4 color;\n"
         "varying vec2 _coord2;\n"
-        "uniform vec4 rect;\n"
+        "varying vec4 _color;\n"
         "void main() {\n"
         "	_coord2 = mix(rect.xy, rect.zw, position2 * 0.5 + 0.5);\n"
+        "   _color = color;\n"
         "	gl_Position = vec4(_coord2 * 2.0 - 1.0, 0.0, 1.0);\n"
         "}\n";
 
 static
 const char * frag_source = "\n"
         "uniform sampler2D texture;\n"
+        "uniform float first_round;\n"
         "varying vec2 _coord2;\n"
-        "uniform vec4 color;\n"
+        "varying vec4 _color;\n"
         "void main() {\n"
         "	// Get samples for -2/3 and -1/3\n"
         "	vec2 valueL = texture2D(texture, vec2(_coord2.x + dFdx(_coord2.x), _coord2.y)).yz * 255.0;\n"
@@ -41,7 +45,7 @@ const char * frag_source = "\n"
         "		0.0);\n"
         "\n"
         "	// Optionally scale by a color\n"
-        "	gl_FragColor = color.a == 0.0 ? 1.0 - rgba : color * rgba;\n"
+        "	gl_FragColor = first_round == 1.0 ? 1.0 - rgba : _color * rgba;\n"
         "}\n";
 
 

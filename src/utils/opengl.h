@@ -10,7 +10,7 @@
 #       include <OpenGLES/ES2/gl.h>
 #     endif
 #   else
-#     include <OpenGL/gl.h>
+#     include <OpenGL/gl3.h>
 #   endif
 #elif defined(_WIN32) || defined(_WIN64)
 #  include <GL/glew.h>

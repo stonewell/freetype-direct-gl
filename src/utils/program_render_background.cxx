@@ -8,19 +8,22 @@ ProgramPtr g_RenderBackgroundProgram = {};
 static
 const char * vert_source = "\n"
         "attribute vec2 position2;\n"
+        "attribute vec4 rect;\n"
+        "attribute vec4 color;\n"
         "varying vec2 _coord2;\n"
-        "uniform vec4 rect;\n"
+        "varying vec4 _color;\n"
         "void main() {\n"
         "	_coord2 = mix(rect.xy, rect.zw, position2 * 0.5 + 0.5);\n"
+        "   _color = color;\n"
         "	gl_Position = vec4(_coord2 * 2.0 - 1.0, 0.0, 1.0);\n"
         "}\n";
 
 static
 const char * frag_source = "\n"
         "varying vec2 _coord2;\n"
-        "uniform vec4 color;\n"
+        "varying vec4 _color;\n"
         "void main() {\n"
-        "	gl_FragColor = color;\n"
+        "	gl_FragColor = _color;\n"
         "}\n";
 
 

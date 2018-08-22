@@ -89,10 +89,10 @@ void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
     m_TextAttribs.push_back(
         {
             {
-                m_OriginX / viewport.window_width,
-                (pen.y - adv_y) / viewport.window_height,
-                pen.x / viewport.window_width,
-                pen.y / viewport.window_height
+                static_cast<float>(m_OriginX / viewport.window_width),
+                static_cast<float>((pen.y - adv_y) / viewport.window_height),
+                static_cast<float>(pen.x / viewport.window_width),
+                static_cast<float>(pen.y / viewport.window_height)
             },
 
             {
@@ -244,7 +244,7 @@ void TextBufferImpl::Init() {
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
 	// Set "renderedTexture" as our colour attachement #0
-	glFramebufferTextureEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_RenderedTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_RenderedTexture, 0);
 
 	// Set the list of draw buffers.
 	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
