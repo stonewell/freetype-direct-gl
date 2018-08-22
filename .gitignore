@@ -102,3 +102,6 @@ pymterm.json
 *.log.*
 
 build/
+
+.cproject
+.project
