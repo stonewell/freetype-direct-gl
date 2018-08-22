@@ -26,7 +26,7 @@ shader_compile( const char* source,
 }
 
 GLuint
-shader_load(const char * vert_source, const char * frag_source)
+shader_load(const char * vert_source, const char * frag_source, uint32_t attrib_map_count, attrib_map_s * attrib_map)
 {
     GLuint handle = glCreateProgram( );
     GLint link_status;
@@ -41,6 +41,10 @@ shader_load(const char * vert_source, const char * frag_source)
         GLuint frag_shader = shader_compile( frag_source, GL_FRAGMENT_SHADER);
         glAttachShader( handle, frag_shader);
         glDeleteShader( frag_shader );
+    }
+
+    for(uint32_t i = 0; i < attrib_map_count; i++) {
+        glBindAttribLocation(handle, attrib_map[i].pos, attrib_map[i].name);
     }
 
     glLinkProgram( handle );

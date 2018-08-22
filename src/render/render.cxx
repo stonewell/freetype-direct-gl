@@ -26,18 +26,14 @@ public:
 private:
     ProgramPtr m_Program;
     ProgramPtr m_ProgramBackground;
+    GLuint m_VertexArray;
 	GLuint m_Vertexbuffer;
-    GLuint m_RenderTextureIndex;
-    GLuint m_ColorIndex;
-    GLuint m_Position2Index;
-    GLuint m_RectIndex;
-    GLuint m_FirstRoundIndex;
-    GLuint m_ColorBackgroundIndex;
-    GLuint m_Position2BackgroundIndex;
-    GLuint m_RectBackgroundIndex;
     GLuint m_RectColorBuffer;
+    GLuint m_RenderTextureIndex;
+    GLuint m_FirstRoundIndex;
 
 private:
+    void InitVertexArray(text::TextBufferPtr text_buf);
     void Init();
     void Destroy();
 
@@ -53,33 +49,70 @@ const GLfloat screen_quad[] = {
     1, 1
 };
 
-void RenderImpl::Init() {
-    m_Program = CreateRenderProgram();
-    m_ProgramBackground = CreateRenderBackgroundProgram();
+void RenderImpl::InitVertexArray(text::TextBufferPtr text_buf) {
+	auto count = text_buf->GetTextAttrCount();
+	auto text_attr = text_buf->GetTextAttr();
 
-	glGenBuffers(1, &m_Vertexbuffer);
-    glGenBuffers(1, &m_RectColorBuffer);
+    glBindVertexArray(m_VertexArray);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_Vertexbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(screen_quad),
                  screen_quad, GL_STATIC_DRAW);
 
-    glUseProgram(*m_Program);
+    //position2
+    glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribDivisor(0, 0);
 
-    m_Position2Index = glGetAttribLocation(*m_Program, "position2");
-    m_ColorIndex = glGetAttribLocation(*m_Program, "color");
-    m_RectIndex = glGetAttribLocation(*m_Program, "rect");
+    // color and rect
+	glBindBuffer(GL_ARRAY_BUFFER, m_RectColorBuffer);
+	glBufferData(GL_ARRAY_BUFFER,
+                 sizeof(text::text_attr_s) * count,
+                 text_attr, GL_DYNAMIC_DRAW);
+
+    //back color
+    glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2,
+                          4,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(text::text_attr_s),
+                          reinterpret_cast<void*>(offsetof(text::text_attr_s, back_color)));
+    glVertexAttribDivisor(2, 1);
+
+    //fore color
+    glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3,
+                          4,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(text::text_attr_s),
+                          reinterpret_cast<void*>(offsetof(text::text_attr_s, color)));
+    glVertexAttribDivisor(3, 1);
+
+    //rect
+    glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1,
+                          4,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(text::text_attr_s),
+                          reinterpret_cast<void*>(offsetof(text::text_attr_s, bounds)));
+    glVertexAttribDivisor(1, 1);
+}
+
+void RenderImpl::Init() {
+    m_Program = CreateRenderProgram();
+    m_ProgramBackground = CreateRenderBackgroundProgram();
+
+    glGenVertexArrays(1, &m_VertexArray);
+	glGenBuffers(1, &m_Vertexbuffer);
+    glGenBuffers(1, &m_RectColorBuffer);
+
+    glUseProgram(*m_Program);
 
     m_RenderTextureIndex = glGetUniformLocation(*m_Program, "texture");
     m_FirstRoundIndex = glGetUniformLocation(*m_Program, "first_round");
-
-    glUseProgram(0);
-
-    glUseProgram(*m_ProgramBackground);
-
-    m_Position2BackgroundIndex = glGetAttribLocation(*m_ProgramBackground, "position2");
-    m_ColorBackgroundIndex = glGetAttribLocation(*m_ProgramBackground, "color");
-    m_RectBackgroundIndex = glGetAttribLocation(*m_ProgramBackground, "rect");
 
     glUseProgram(0);
 }
@@ -87,6 +120,7 @@ void RenderImpl::Init() {
 void RenderImpl::Destroy() {
     glDeleteBuffers(1, &m_Vertexbuffer);
     glDeleteBuffers(1, &m_RectColorBuffer);
+    glDeleteVertexArrays(1, &m_VertexArray);
 }
 
 void RenderImpl::DrawBackground(text::TextBufferPtr text_buf) {
@@ -96,41 +130,11 @@ void RenderImpl::DrawBackground(text::TextBufferPtr text_buf) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glUseProgram (*m_ProgramBackground);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_Vertexbuffer);
-    glEnableVertexAttribArray (m_Position2BackgroundIndex);
-	glVertexAttribPointer(m_Position2BackgroundIndex, 2, GL_FLOAT, GL_FALSE, 0,
-                          0);
-    glVertexAttribDivisor(m_Position2BackgroundIndex, 0);
-
-    // color and rect
-	glBindBuffer(GL_ARRAY_BUFFER, m_RectColorBuffer);
-
-    glEnableVertexAttribArray(m_ColorBackgroundIndex);
-	glVertexAttribPointer(m_ColorBackgroundIndex,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          sizeof(text::text_attr_s),
-                          reinterpret_cast<void*>(offsetof(text::text_attr_s, back_color)));
-    glVertexAttribDivisor(m_ColorBackgroundIndex, 1);
-
-    glEnableVertexAttribArray(m_RectBackgroundIndex);
-	glVertexAttribPointer(m_RectBackgroundIndex,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          sizeof(text::text_attr_s),
-                          reinterpret_cast<void*>(offsetof(text::text_attr_s, bounds)));
-
-    glVertexAttribDivisor(m_RectBackgroundIndex, 1);
+    glBindVertexArray(m_VertexArray);
 
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0,
                           sizeof(screen_quad) / sizeof(GLfloat) / 2,
                           count);
-
-    glDisableVertexAttribArray(m_Position2BackgroundIndex);
-    glDisableVertexAttribArray(m_ColorBackgroundIndex);
-    glDisableVertexAttribArray(m_RectBackgroundIndex);
 
     glUseProgram(0);
 }
@@ -144,32 +148,7 @@ void RenderImpl::DrawForeground(text::TextBufferPtr text_buf) {
 	glBlendFunc(GL_ZERO, GL_SRC_COLOR);
 	glUseProgram (*m_Program);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_Vertexbuffer);
-	glEnableVertexAttribArray(m_Position2Index);
-	glVertexAttribPointer(m_Position2Index, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glVertexAttribDivisor(m_Position2Index, 0);
-
-    // color and rect
-	glBindBuffer(GL_ARRAY_BUFFER, m_RectColorBuffer);
-
-    glEnableVertexAttribArray(m_ColorBackgroundIndex);
-	glVertexAttribPointer(m_ColorBackgroundIndex,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          sizeof(text::text_attr_s),
-                          reinterpret_cast<void*>(offsetof(text::text_attr_s, color)));
-    glVertexAttribDivisor(m_ColorBackgroundIndex, 1);
-
-    glEnableVertexAttribArray(m_RectBackgroundIndex);
-	glVertexAttribPointer(m_RectBackgroundIndex,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          sizeof(text::text_attr_s),
-                          reinterpret_cast<void*>(offsetof(text::text_attr_s, bounds)));
-
-    glVertexAttribDivisor(m_RectBackgroundIndex, 1);
+    glBindVertexArray(m_VertexArray);
 
 	glUniform1f(m_FirstRoundIndex, 1.0);
 
@@ -189,23 +168,13 @@ void RenderImpl::DrawForeground(text::TextBufferPtr text_buf) {
                           sizeof(screen_quad) / sizeof(GLfloat) / 2,
                           count);
 
-    glDisableVertexAttribArray(m_Position2Index);
-    glDisableVertexAttribArray(m_ColorIndex);
-    glDisableVertexAttribArray(m_RectIndex);
-
     glUseProgram(0);
 }
 
 bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
-	auto count = text_buf->GetTextAttrCount();
-	auto text_attr = text_buf->GetTextAttr();
-
 	glEnable (GL_BLEND);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_RectColorBuffer);
-	glBufferData(GL_ARRAY_BUFFER,
-                 sizeof(text::text_attr_s) * count,
-                 text_attr, GL_STATIC_DRAW);
+    InitVertexArray(text_buf);
 
 	DrawBackground(text_buf);
 

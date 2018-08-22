@@ -84,6 +84,7 @@ void display( GLFWwindow* window )
 
     glViewport(0, 0, 500 * 2, 220 * 2);
     render->RenderText(buffer);
+    render->RenderText(buffer);
 
     glfwSwapBuffers( window );
 }

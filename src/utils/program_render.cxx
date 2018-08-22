@@ -53,7 +53,13 @@ const char * frag_source = "\n"
 
 ProgramPtr CreateRenderProgram() {
     if (!impl::g_RenderProgram) {
-        impl::g_RenderProgram = CreateProgram(impl::vert_source, impl::frag_source);
+        attrib_map_s map[] = {
+            {3, "color"},
+            {1, "rect"},
+            {0, "position2"},
+        };
+
+        impl::g_RenderProgram = CreateProgram(impl::vert_source, impl::frag_source, sizeof(map) / sizeof(attrib_map_s), map);
     }
 
     return impl::g_RenderProgram;

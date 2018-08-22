@@ -31,7 +31,12 @@ const char * frag_source = "\n"
 
 ProgramPtr CreateRenderBackgroundProgram() {
     if (!impl::g_RenderBackgroundProgram) {
-        impl::g_RenderBackgroundProgram = CreateProgram(impl::vert_source, impl::frag_source);
+        attrib_map_s map[] = {
+            {2, "color"},
+            {1, "rect"},
+            {0, "position2"},
+        };
+        impl::g_RenderBackgroundProgram = CreateProgram(impl::vert_source, impl::frag_source, sizeof(map) / sizeof(attrib_map_s), map);
     }
 
     return impl::g_RenderBackgroundProgram;
