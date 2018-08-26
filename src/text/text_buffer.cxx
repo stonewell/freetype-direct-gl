@@ -180,21 +180,21 @@ bool TextBufferImpl::AddChar(pen_s & pen,
 	glBufferData(GL_ARRAY_BUFFER, glyph->GetSize(),
                  glyph->GetAddr(), GL_STATIC_DRAW);
 
-    glUseProgram(*m_ProgramId);
+    GLuint matrixColorBuffer;
+    glGenBuffers(1, &matrixColorBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, matrixColorBuffer);
+    glBufferData(GL_ARRAY_BUFFER,
+                 sizeof(JITTER_PATTERN) / sizeof(glm::vec2) * (sizeof(glm::mat4) + sizeof(glm::vec4)),
+                 NULL,
+                 GL_DYNAMIC_DRAW);
 
     auto c = glm::vec4(0.0, 0.0, 0.0, 0.0);
-
-    glEnableVertexAttribArray(m_Position4Index);
-    glVertexAttribPointer(m_Position4Index, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
         glm::mat4 translate3 = glm::translate(glm::mat4(1.0), glm::vec3(JITTER_PATTERN[i].x * 72 / viewport.dpi / pt_width ,
                                                                         JITTER_PATTERN[i].y * 72 / viewport.dpi_height / pt_height,
                                                                         0));
         glm::mat4 transform_x = translate3 * transform;
-
-        glUniformMatrix4fv(m_Matrix4Index,
-                           1, GL_FALSE, &transform_x[0][0]);
 
         if (i % 2 == 0) {
             c = glm::vec4(i == 0 ? 1.0 : 0.0,
@@ -203,12 +203,53 @@ bool TextBufferImpl::AddChar(pen_s & pen,
                           0.0);
         }
 
-        glUniform4fv(m_ColorIndex, 1, &c[0]);
-
-		glDrawArrays(GL_TRIANGLES, 0, glyph->GetSize() / sizeof(GLfloat) / 4);
+        glBufferSubData(GL_ARRAY_BUFFER,
+                        i * (sizeof(glm::mat4) + sizeof(glm::vec4)),
+                        sizeof(glm::mat4),
+                        &transform_x);
+        glBufferSubData(GL_ARRAY_BUFFER,
+                        i * (sizeof(glm::mat4) + sizeof(glm::vec4)) + sizeof(glm::mat4),
+                        sizeof(glm::vec4),
+                        &c);
     }
 
+    glUseProgram(*m_ProgramId);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribDivisor(0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, matrixColorBuffer);
+    //a mat4 take 4 attribute of vec4
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(0));
+    glVertexAttribDivisor(2, 1);
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4)));
+    glVertexAttribDivisor(3, 1);
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4) * 2));
+    glVertexAttribDivisor(4, 1);
+
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4) * 3));
+    glVertexAttribDivisor(5, 1);
+
+    //color
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4) * 4));
+    glVertexAttribDivisor(1, 1);
+
+    glDrawArraysInstanced(GL_TRIANGLES, 0,
+                          glyph->GetSize() / sizeof(GLfloat) / 4,
+                          sizeof(JITTER_PATTERN) / sizeof(glm::vec2));
+
+
 	glDeleteBuffers(1, &vertexbuffer);
+	glDeleteBuffers(1, &matrixColorBuffer);
     glDisableVertexAttribArray(m_Position4Index);
     glUseProgram(0);
 
