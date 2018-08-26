@@ -208,6 +208,7 @@ bool TextBufferImpl::AddChar(pen_s & pen,
 		glDrawArrays(GL_TRIANGLES, 0, glyph->GetSize() / sizeof(GLfloat) / 4);
     }
 
+	glDeleteBuffers(1, &vertexbuffer);
     glDisableVertexAttribArray(m_Position4Index);
     glUseProgram(0);
 
