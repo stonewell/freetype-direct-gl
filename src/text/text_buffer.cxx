@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 namespace ftdgl {
 namespace text {
@@ -37,6 +38,21 @@ glm::vec2 JITTER_PATTERN[] = {
 	{ 9 / 12.0,  3 / 12.0},
 };
 
+typedef struct __matrix_color_s {
+    glm::mat4 transform;
+    glm::vec4 color;
+} matrix_color_s;
+
+typedef struct __draw_array_indirect_cmd_s{
+    GLuint  count;
+    GLuint  instanceCount;
+    GLuint  first;
+    GLuint  baseInstance;
+} draw_array_indirect_cmd_s;
+
+using matrix_color_vector = std::vector<matrix_color_s>;
+using glyph_matrix_color_map = std::unordered_map<GlyphPtr, matrix_color_vector>;
+
 class TextBufferImpl : public TextBuffer {
 public:
     TextBufferImpl(const viewport::viewport_s & viewport)
@@ -53,6 +69,7 @@ public:
     virtual void Clear();
     virtual uint32_t GetTextAttrCount() const { return m_TextAttribs.size(); }
     virtual const text_attr_s * GetTextAttr() const { return &m_TextAttribs[0]; }
+    virtual void GenTexture();
 
 private:
     bool AddChar(pen_s & pen,
@@ -66,12 +83,12 @@ private:
     double m_OriginX;
 
     ProgramPtr m_ProgramId;
-    GLuint m_Position4Index;
-    GLuint m_ColorIndex;
-    GLuint m_Matrix4Index;
 
     std::vector<text_attr_s> m_TextAttribs;
+    glyph_matrix_color_map m_GlyphMatrixColors;
 
+    bool m_TextureGenerated;
+    uint32_t m_VertexCount;
 private:
     void Init();
     void Destroy();
@@ -112,11 +129,6 @@ void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
 }
 
 bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-
     m_OriginX = pen.x;
 
     for(size_t i=0;i < text.length(); i++) {
@@ -129,7 +141,6 @@ bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::ws
     if (pen.x != m_OriginX)
         AddTextAttr(pen, markup, m_Viewport);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return true;
 }
 
@@ -153,15 +164,6 @@ bool TextBufferImpl::AddChar(pen_s & pen,
         return true;
     }
 
-    glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
-    glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, -markup.font->GetAscender(), 0));
-    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2.0 * pen.x / viewport.window_width, 2.0 * pen.y / viewport.window_height, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / pt_width, 1.0 / pt_height, 0));
-
-    glm::mat4 scale_font = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize(), markup.font->GetPtSize(), 0));
-
-    glm::mat4 transform = translate2 * translate * scale * scale_font * translate1;
-
     auto glyph = markup.font->LoadGlyph(ch);
 
     if (!glyph)
@@ -174,21 +176,20 @@ bool TextBufferImpl::AddChar(pen_s & pen,
         return true;
     }
 
-	GLuint vertexbuffer;
-	glGenBuffers(1, &vertexbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glBufferData(GL_ARRAY_BUFFER, glyph->GetSize(),
-                 glyph->GetAddr(), GL_STATIC_DRAW);
+    m_TextureGenerated = false;
 
-    GLuint matrixColorBuffer;
-    glGenBuffers(1, &matrixColorBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, matrixColorBuffer);
-    glBufferData(GL_ARRAY_BUFFER,
-                 sizeof(JITTER_PATTERN) / sizeof(glm::vec2) * (sizeof(glm::mat4) + sizeof(glm::vec4)),
-                 NULL,
-                 GL_DYNAMIC_DRAW);
+    glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
+    glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, -markup.font->GetAscender(), 0));
+    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2.0 * pen.x / viewport.window_width, 2.0 * pen.y / viewport.window_height, 0));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / pt_width, 1.0 / pt_height, 0));
+
+    glm::mat4 scale_font = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetPtSize(), markup.font->GetPtSize(), 0));
+
+    glm::mat4 transform = translate2 * translate * scale * scale_font * translate1;
 
     auto c = glm::vec4(0.0, 0.0, 0.0, 0.0);
+
+    auto p = m_GlyphMatrixColors.insert(std::pair<GlyphPtr, matrix_color_vector>(glyph, matrix_color_vector{}));
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
         glm::mat4 translate3 = glm::translate(glm::mat4(1.0), glm::vec3(JITTER_PATTERN[i].x * 72 / viewport.dpi / pt_width ,
@@ -203,55 +204,14 @@ bool TextBufferImpl::AddChar(pen_s & pen,
                           0.0);
         }
 
-        glBufferSubData(GL_ARRAY_BUFFER,
-                        i * (sizeof(glm::mat4) + sizeof(glm::vec4)),
-                        sizeof(glm::mat4),
-                        &transform_x);
-        glBufferSubData(GL_ARRAY_BUFFER,
-                        i * (sizeof(glm::mat4) + sizeof(glm::vec4)) + sizeof(glm::mat4),
-                        sizeof(glm::vec4),
-                        &c);
+        p.first->second.push_back(
+            {
+                transform_x,
+                c
+            });
     }
 
-    glUseProgram(*m_ProgramId);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glVertexAttribDivisor(0, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, matrixColorBuffer);
-    //a mat4 take 4 attribute of vec4
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(0));
-    glVertexAttribDivisor(2, 1);
-
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4)));
-    glVertexAttribDivisor(3, 1);
-
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4) * 2));
-    glVertexAttribDivisor(4, 1);
-
-    glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4) * 3));
-    glVertexAttribDivisor(5, 1);
-
-    //color
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4) + sizeof(glm::vec4), reinterpret_cast<void *>(sizeof(glm::vec4) * 4));
-    glVertexAttribDivisor(1, 1);
-
-    glDrawArraysInstanced(GL_TRIANGLES, 0,
-                          glyph->GetSize() / sizeof(GLfloat) / 4,
-                          sizeof(JITTER_PATTERN) / sizeof(glm::vec2));
-
-
-	glDeleteBuffers(1, &vertexbuffer);
-	glDeleteBuffers(1, &matrixColorBuffer);
-    glDisableVertexAttribArray(m_Position4Index);
-    glUseProgram(0);
+    m_VertexCount += glyph->GetSize() / sizeof(GLfloat) / 4;
 
     pen.x += adv_x;
 
@@ -260,6 +220,9 @@ bool TextBufferImpl::AddChar(pen_s & pen,
 }
 
 void TextBufferImpl::Init() {
+    m_TextureGenerated = false;
+    m_VertexCount = 0;
+
 	glGenFramebuffers(1, &m_FrameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 
@@ -304,14 +267,6 @@ void TextBufferImpl::Init() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     m_ProgramId = CreateTextBufferProgram();
-
-    glUseProgram(*m_ProgramId);
-
-    m_Matrix4Index = glGetUniformLocation(*m_ProgramId, "matrix4");
-    m_ColorIndex = glGetUniformLocation(*m_ProgramId, "color");
-    m_Position4Index = glGetAttribLocation(*m_ProgramId, "position4");
-
-    glUseProgram(0);
 }
 
 void TextBufferImpl::Destroy() {
@@ -326,6 +281,77 @@ void TextBufferImpl::Clear() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     m_TextAttribs.clear();
+    m_GlyphMatrixColors.clear();
+
+    m_TextureGenerated = false;
+    m_VertexCount = 0;
+}
+
+void TextBufferImpl::GenTexture() {
+    if (m_TextureGenerated) return;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+
+    GLuint buffers[2] = {0};
+    glGenBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+
+    glUseProgram(*m_ProgramId);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
+    glEnableVertexAttribArray(5);
+
+    glVertexAttribDivisor(0, 0);
+    glVertexAttribDivisor(1, 1);
+    glVertexAttribDivisor(2, 1);
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
+
+    for(auto p : m_GlyphMatrixColors) {
+        auto & glyph = p.first;
+        auto & matrix_colors = p.second;
+
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+        glBufferData(GL_ARRAY_BUFFER, glyph->GetSize(),
+                     glyph->GetAddr(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+        glBufferData(GL_ARRAY_BUFFER, matrix_colors.size() * sizeof(matrix_color_s),
+                     &matrix_colors[0], GL_STATIC_DRAW);
+
+        //a mat4 take 4 attribute of vec4
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(0));
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(sizeof(glm::vec4)));
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(sizeof(glm::vec4) * 2));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(sizeof(glm::vec4) * 3));
+        //color
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(sizeof(glm::vec4) * 4));
+
+        glDrawArraysInstanced(GL_TRIANGLES, 0,
+                              glyph->GetSize() / sizeof(GLfloat) / 4,
+                              matrix_colors.size());
+    }
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+    glDisableVertexAttribArray(3);
+    glDisableVertexAttribArray(4);
+    glDisableVertexAttribArray(5);
+
+    glUseProgram(0);
+    glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    m_TextureGenerated = true;
 }
 
 } //namespace impl
