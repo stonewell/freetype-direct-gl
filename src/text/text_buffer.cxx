@@ -338,8 +338,10 @@ void TextBufferImpl::GenTexture() {
     glVertexAttribDivisor(5, 1);
 
     for(size_t i = 0;i < m_Cmds.size(); i++, indirect++) {
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(first * sizeof(GLfloat)));
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(first * sizeof(GLfloat) * 4));
 
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
         glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(instance_count * sizeof(matrix_color_s)));
         glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(instance_count * sizeof(matrix_color_s) + sizeof(glm::vec4)));
         glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(matrix_color_s), reinterpret_cast<void *>(instance_count * sizeof(matrix_color_s) + sizeof(glm::vec4) * 2));
