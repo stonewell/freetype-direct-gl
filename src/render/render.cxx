@@ -99,6 +99,7 @@ void RenderImpl::InitVertexArray(text::TextBufferPtr text_buf) {
                           sizeof(text::text_attr_s),
                           reinterpret_cast<void*>(offsetof(text::text_attr_s, bounds)));
     glVertexAttribDivisor(1, 1);
+    glBindVertexArray(0);
 }
 
 void RenderImpl::Init() {
@@ -136,6 +137,7 @@ void RenderImpl::DrawBackground(text::TextBufferPtr text_buf) {
                           sizeof(screen_quad) / sizeof(GLfloat) / 2,
                           count);
 
+    glBindVertexArray(0);
     glUseProgram(0);
 }
 
@@ -169,10 +171,13 @@ void RenderImpl::DrawForeground(text::TextBufferPtr text_buf) {
                           count);
 
     glUseProgram(0);
+    glBindVertexArray(0);
 }
 
 bool RenderImpl::RenderText(text::TextBufferPtr text_buf) {
 	glEnable (GL_BLEND);
+
+	text_buf->GenTexture();
 
     InitVertexArray(text_buf);
 
