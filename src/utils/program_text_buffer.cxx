@@ -7,7 +7,6 @@ ProgramPtr g_TextBufferProgram = {};
 
 static
 const char * vert_source = "\n"
-        "uniform mat3 matrix3;\n"
         "uniform mat4 matrix4;\n"
         "attribute vec4 position4;\n"
         "varying vec2 _coord2;\n"
