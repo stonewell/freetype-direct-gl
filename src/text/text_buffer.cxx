@@ -99,7 +99,7 @@ private:
 
 void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
                                  const viewport::viewport_s & viewport) {
-    auto adv_y = viewport.FontSizeToViewport(markup.font,
+    auto adv_y = viewport.line_height ? viewport.line_height : viewport.FontSizeToViewport(markup.font,
                                              markup.font->GetAscender() - markup.font->GetDescender(),
                                              false);
 
@@ -151,7 +151,7 @@ bool TextBufferImpl::AddChar(pen_s & pen,
     float pt_width = viewport.pixel_width * 72 / viewport.dpi;
     float pt_height = viewport.pixel_height * 72 / viewport.dpi_height;
 
-    auto adv_y = viewport.FontSizeToViewport(markup.font,
+    auto adv_y = viewport.line_height ? viewport.line_height : viewport.FontSizeToViewport(markup.font,
                                              markup.font->GetAscender() - markup.font->GetDescender(),
                                              false);
 

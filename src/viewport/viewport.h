@@ -13,6 +13,7 @@ struct viewport_s {
     int window_height;
     float dpi;
     float dpi_height;
+    int line_height;//0 means using the font height
 
     double FontSizeToViewport(const FontPtr & font, double v, bool horz) const;
 };
