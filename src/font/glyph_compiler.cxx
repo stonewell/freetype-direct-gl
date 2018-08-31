@@ -48,16 +48,11 @@ static void AppendTriangle(compile_context_s * context,
 size_t compile_glyph(uint8_t * addr, int unitPerEM, FT_Outline & outline) {
     FT_Outline_Funcs callbacks;
 
-    const FT_Fixed multiplier = 65536L;
-
-    FT_Matrix matrix;
-
-    matrix.xx = 1L * multiplier;
-    matrix.xy = 0L * multiplier;
-    matrix.yx = 0L * multiplier;
-    matrix.yy = -1L * multiplier;
-
-    compile_context_s context {.addr=addr, .size=0, .unitPerEM = unitPerEM};
+    compile_context_s context {.addr=addr, .size=0,
+                .contourCount=0,
+                .firstX=0, .firstY=0, .currentX=0, .currentY=0,
+                .unitPerEM = unitPerEM
+                };
 
     callbacks.move_to = MoveToFunction;
     callbacks.line_to = LineToFunction;

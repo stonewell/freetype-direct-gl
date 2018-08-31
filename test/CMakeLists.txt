@@ -31,4 +31,5 @@ TARGET_LINK_LIBRARIES(markup
     ${FREETYPE_LIBRARY}
     glfw
     ${OPENGL_LIBRARY}
+    ${GLEW_LIBRARY}
 )
