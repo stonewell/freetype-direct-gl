@@ -5,6 +5,7 @@
 
 #include "text_buffer.h"
 #include "program.h"
+#include "char_width.h"
 
 #include <iostream>
 #include <vector>
@@ -169,7 +170,8 @@ bool TextBufferImpl::AddChar(pen_s & pen,
     if (!glyph)
         return true;
 
-    auto adv_x = viewport.glyph_width ? viewport.glyph_width : viewport.FontSizeToViewport(markup.font, glyph->GetAdvanceX(), true);
+    auto glyph_adv_x = viewport.FontSizeToViewport(markup.font, glyph->GetAdvanceX(), true);
+    auto adv_x = viewport.glyph_width ? (char_width(ch) > 1 ? viewport.glyph_width * 2 : viewport.glyph_width) : glyph_adv_x;
 
     if (!glyph->NeedDraw()) {
         pen.x += adv_x;

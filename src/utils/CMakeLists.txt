@@ -4,6 +4,7 @@ SET(utils_src
   shader.h shader.cxx
   program.h program_text_buffer.cxx program_render.cxx program.cxx
   program_render_background.cxx
+  char_width.h char_width.cxx
 )
 
 ADD_LIBRARY(utils OBJECT ${utils_src})
