@@ -169,7 +169,7 @@ bool TextBufferImpl::AddChar(pen_s & pen,
     if (!glyph)
         return true;
 
-    auto adv_x = viewport.FontSizeToViewport(markup.font, glyph->GetAdvanceX(), true);
+    auto adv_x = viewport.glyph_width ? viewport.glyph_width : viewport.FontSizeToViewport(markup.font, glyph->GetAdvanceX(), true);
 
     if (!glyph->NeedDraw()) {
         pen.x += adv_x;

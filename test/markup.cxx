@@ -196,7 +196,8 @@ int main( int argc, char **argv )
         0, 0,
         pixel_width, pixel_height,
         500, 220,
-        dpi, dpi_height, 0
+        dpi, dpi_height,
+        0, 0
     };
 
     init(viewport);

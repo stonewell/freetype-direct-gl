@@ -14,6 +14,7 @@ struct viewport_s {
     float dpi;
     float dpi_height;
     int line_height;//0 means using the font height
+    int glyph_width;//0 means using the glyph advance x
 
     double FontSizeToViewport(const FontPtr & font, double v, bool horz) const;
 };
