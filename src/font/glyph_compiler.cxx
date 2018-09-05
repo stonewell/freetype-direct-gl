@@ -118,12 +118,21 @@ int CubicToFunction(const FT_Vector *controlOne,
                     const FT_Vector *to,
                     void *user) {
     compile_context_s * context = reinterpret_cast<compile_context_s*>(user);
-    (void)controlOne;
-    (void)controlTwo;
-    (void)to;
-    (void)context;
 
-    assert(false);
+    if (++context->contourCount >= 2) {
+        AppendTriangle(context, context->firstX, context->firstY, context->currentX, context->currentY,
+                       to->x, to->y, SOLID);
+    }
+
+    AppendTriangle(context, context->currentX, context->currentY,
+                   controlOne->x, controlOne->y,
+                   to->x, to->y, QUADRATIC_CURVE);
+    AppendTriangle(context, context->currentX, context->currentY,
+                   controlTwo->x, controlTwo->y,
+                   to->x, to->y, QUADRATIC_CURVE);
+
+    context->currentX = to->x;
+    context->currentY = to->y;
     return 0;
 }
 
