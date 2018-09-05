@@ -18,7 +18,7 @@ namespace impl {
 
 #define HRES  64
 #define HRESf 64.f
-#define DPI   72
+#define DPI   110
 
 struct font_desc_s {
     std::string file_name;
@@ -209,20 +209,17 @@ void FontImpl::InitFont() {
     }
 
     /* Set char size */
-    error = FT_Set_Char_Size(m_Face, (int)(m_FontDesc.size * HRES), 0, DPI * HRES, DPI);
+    error = FT_Set_Char_Size(m_Face, (int)(m_FontDesc.size * HRES), 0, DPI, DPI);
 
     if(error) {
         err_msg(error, __LINE__);
         goto cleanup_face;
     }
 
-    std::cout << "as:" << m_Face->size->metrics.ascender /64.0 << ", ds:" << m_Face->size->metrics.descender / 64.0<< std::endl;
-
     m_Descender = FT_MulFix(m_Face->descender, m_Face->size->metrics.y_scale) / (float)64.0;
     m_Ascender = FT_MulFix(m_Face->ascender, m_Face->size->metrics.y_scale) / (float)64.0;
     m_Height = FT_MulFix(m_Face->height, m_Face->size->metrics.y_scale) / (float)64.0;
 
-    std::cout << "d:" << m_Descender << ", a:" << m_Ascender << ", h:" << m_Height << std::endl;
     m_FontFaceInitialized = true;
     return;
 
@@ -248,7 +245,7 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
 
     FT_Error error = FT_Load_Glyph(m_Face,
                                    index,
-                                   FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP);
+                                   FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LCD);
     if(error) {
         err_msg(error, __LINE__);
         return GlyphPtr {};

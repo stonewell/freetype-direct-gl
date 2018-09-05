@@ -32,13 +32,13 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     ftdgl::text::color_s grey   = {0.5, 0.5, 0.5, 1.0};
     ftdgl::text::color_s none   = {1.0, 1.0, 1.0, 0.0};
 
-    ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Monospace:size=32");
-    ftdgl::FontPtr f_small   = font_manager->CreateFontFromDesc("Monospace:size=20");
-    ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=96:slant=italic");
-    ftdgl::FontPtr f_bold     = font_manager->CreateFontFromDesc("Droid Serif:size=48:weight=200");
-    ftdgl::FontPtr f_italic   = font_manager->CreateFontFromDesc("Droid Serif:size=48:slant=italic");
-    ftdgl::FontPtr f_japanese = font_manager->CreateFontFromDesc("Droid Sans:size=36:lang=ja");
-    ftdgl::FontPtr f_math     = font_manager->CreateFontFromDesc("DejaVu Sans:size=48");
+    ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Menlo:size=16");
+    ftdgl::FontPtr f_small   = font_manager->CreateFontFromDesc("Monospace:size=10");
+    ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=48:slant=italic");
+    ftdgl::FontPtr f_bold     = font_manager->CreateFontFromDesc("Droid Serif:size=24:weight=200");
+    ftdgl::FontPtr f_italic   = font_manager->CreateFontFromDesc("Droid Serif:size=24:slant=italic");
+    ftdgl::FontPtr f_japanese = font_manager->CreateFontFromDesc("Droid Sans:size=18:lang=ja");
+    ftdgl::FontPtr f_math     = font_manager->CreateFontFromDesc("DejaVu Sans:size=24");
 
     ftdgl::text::markup_s normal = {
         .fore_color    = white, .back_color    = none,
@@ -71,7 +71,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n"); pen.x = 20;
     buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ\n"); pen.x = 20;
     buffer->AddText(pen, big, L"pork"); pen.x = 20;
-    buffer->AddText(pen, normal, L"A");
+    buffer->AddText(pen, normal, L"AAAAArial");
 }
 
 

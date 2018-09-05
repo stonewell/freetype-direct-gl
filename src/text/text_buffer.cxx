@@ -152,6 +152,8 @@ bool TextBufferImpl::AddChar(pen_s & pen,
 
     auto adv_y = viewport.line_height ? viewport.line_height : markup.font->GetHeight();
 
+    adv_y /= 2.0;
+
     if (ch == L'\n') {
         if (pen.x != m_OriginX)
             AddTextAttr(pen, markup, viewport);
@@ -169,6 +171,7 @@ bool TextBufferImpl::AddChar(pen_s & pen,
     auto glyph_adv_x = glyph->GetAdvanceX();
     auto adv_x = viewport.glyph_width ? (char_width(ch) > 1 ? viewport.glyph_width * 2 : viewport.glyph_width) : glyph_adv_x;
 
+    adv_x /= 2.0;
     if (!glyph->NeedDraw()) {
         pen.x += adv_x;
         return true;
@@ -179,7 +182,7 @@ bool TextBufferImpl::AddChar(pen_s & pen,
     glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
     glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, -2.0 * markup.font->GetAscender() / viewport.window_height, 0));
     glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(2.0 * pen.x / viewport.window_width, 2.0 * pen.y / viewport.window_height, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(1.0 / viewport.window_width, 1.0 / viewport.window_height, 0));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(2.0 / viewport.pixel_width, 2.0 / viewport.pixel_height, 0));
 
     glm::mat4 scale_font = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetHeight(), markup.font->GetHeight(), 0));
 
