@@ -32,7 +32,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     ftdgl::text::color_s grey   = {0.5, 0.5, 0.5, 1.0};
     ftdgl::text::color_s none   = {1.0, 1.0, 1.0, 0.0};
 
-    ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Monospace:size=48");
+    ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Monospace:size=32");
     ftdgl::FontPtr f_small   = font_manager->CreateFontFromDesc("Monospace:size=20");
     ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=96:slant=italic");
     ftdgl::FontPtr f_bold     = font_manager->CreateFontFromDesc("Droid Serif:size=48:weight=200");
@@ -71,6 +71,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n"); pen.x = 20;
     buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ\n"); pen.x = 20;
     buffer->AddText(pen, big, L"pork"); pen.x = 20;
+    buffer->AddText(pen, normal, L"A");
 }
 
 
@@ -190,6 +191,7 @@ int main( int argc, char **argv )
     std::cout << "w:" << pixel_width << ", h:" << pixel_height
               << ", dpi:" << dpi
               << ", " << dpi_height
+              << ", mw:" << mode->width << ", mh:" << mode->height
               << std::endl;
 
     ftdgl::viewport::viewport_s viewport {

@@ -18,11 +18,12 @@ namespace impl {
 class GlyphImpl : public Glyph {
 public:
     GlyphImpl(uint32_t codepoint, int unitPerEM, FT_GlyphSlot & slot, uint8_t * addr, size_t size)
-        : m_UnitPerEM{unitPerEM}
-        , m_Codepoint{codepoint}
-        , m_Addr{addr}
+        // : m_UnitPerEM{unitPerEM}
+          : m_Codepoint{codepoint}
+          , m_Addr{addr}
         , m_Size{size}
     {
+        (void)unitPerEM;
         InitGlyph(slot);
     }
 
@@ -31,8 +32,8 @@ public:
 
 public:
     void InitGlyph(const FT_GlyphSlot & slot) {
-        m_AdvanceX = slot->advance.x / (float)m_UnitPerEM;
-        m_AdvanceY = slot->advance.y / (float)m_UnitPerEM;
+        m_AdvanceX = FT_MulFix(slot->advance.x, slot->face->size->metrics.y_scale) / 64.0;
+        m_AdvanceY = FT_MulFix(slot->advance.y, slot->face->size->metrics.y_scale) / 64.0;
     }
 
 public:
@@ -44,7 +45,7 @@ public:
     virtual bool NeedDraw() const { return m_Addr != nullptr; }
 
 private:
-    int m_UnitPerEM;
+    // int m_UnitPerEM;
     uint32_t m_Codepoint;
     float m_AdvanceX;
     float m_AdvanceY;

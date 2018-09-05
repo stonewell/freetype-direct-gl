@@ -216,10 +216,13 @@ void FontImpl::InitFont() {
         goto cleanup_face;
     }
 
-    m_Descender = (float)m_Face->descender / (float)m_Face->units_per_EM;
-    m_Ascender = (float)m_Face->ascender / (float)m_Face->units_per_EM;
-    m_Height = (float)m_Face->height / (float)m_Face->units_per_EM;
+    std::cout << "as:" << m_Face->size->metrics.ascender /64.0 << ", ds:" << m_Face->size->metrics.descender / 64.0<< std::endl;
 
+    m_Descender = FT_MulFix(m_Face->descender, m_Face->size->metrics.y_scale) / (float)64.0;
+    m_Ascender = FT_MulFix(m_Face->ascender, m_Face->size->metrics.y_scale) / (float)64.0;
+    m_Height = FT_MulFix(m_Face->height, m_Face->size->metrics.y_scale) / (float)64.0;
+
+    std::cout << "d:" << m_Descender << ", a:" << m_Ascender << ", h:" << m_Height << std::endl;
     m_FontFaceInitialized = true;
     return;
 
