@@ -246,7 +246,7 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
 
     FT_Error error = FT_Load_Glyph(m_Face,
                                    index,
-                                   FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LCD);
+                                   /*FT_LOAD_NO_SCALE |*/ FT_LOAD_NO_BITMAP | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LCD);
     if(error) {
         err_msg(error, __LINE__);
         return GlyphPtr {};

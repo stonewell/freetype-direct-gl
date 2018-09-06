@@ -33,8 +33,8 @@ public:
 
 public:
     void InitGlyph(const FT_GlyphSlot & slot) {
-        m_AdvanceX = FT_MulFix(slot->advance.x, slot->face->size->metrics.x_scale) / 64.0;
-        m_AdvanceY = FT_MulFix(slot->advance.y, slot->face->size->metrics.y_scale) / 64.0;
+        m_AdvanceX = (float)slot->advance.x / 64.0;// / (float)m_UnitPerEM;
+        m_AdvanceY = (float)slot->advance.y;// / (float)m_UnitPerEM;
     }
 
 public:

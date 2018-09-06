@@ -5,6 +5,7 @@
 #include FT_LCD_FILTER_H
 
 #include <cassert>
+#include <iostream>
 
 #include "opengl.h"
 
@@ -142,8 +143,9 @@ void AppendVertex(compile_context_s * context,
                   GLfloat s, GLfloat t)
 {
     GLfloat* p = reinterpret_cast<GLfloat*>(context->addr);
-    *p++ = (GLfloat)x / context->unitPerEM;
-    *p++ = (GLfloat)y / context->unitPerEM;
+
+    *p++ = (GLfloat)x / 64.0;//context->unitPerEM;
+    *p++ = (GLfloat)y / 64.0;//context->unitPerEM;
     *p++ = s;
     *p++ = t;
 
