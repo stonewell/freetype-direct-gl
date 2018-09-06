@@ -18,7 +18,7 @@ namespace impl {
 
 #define HRES  64
 #define HRESf 64.f
-#define DPI   110
+#define DPI   220
 
 struct font_desc_s {
     std::string file_name;
@@ -220,6 +220,7 @@ void FontImpl::InitFont() {
     m_Ascender = FT_MulFix(m_Face->ascender, m_Face->size->metrics.y_scale) / (float)64.0;
     m_Height = FT_MulFix(m_Face->height, m_Face->size->metrics.y_scale) / (float)64.0;
 
+    std::cout << "d:" << m_Descender << "," << m_Face->descender << ", a:" << m_Ascender << ", " << m_Face->ascender << ", h:" << m_Height << std::endl;
     m_FontFaceInitialized = true;
     return;
 
