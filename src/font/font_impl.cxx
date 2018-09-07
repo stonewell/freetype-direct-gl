@@ -12,6 +12,7 @@
 #include <fontconfig/fontconfig.h>
 #include <iostream>
 #include <stdio.h>
+#include <math.h>
 
 namespace ftdgl {
 namespace impl {
