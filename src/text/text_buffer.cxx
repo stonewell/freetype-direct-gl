@@ -105,10 +105,10 @@ void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
     m_TextAttribs.push_back(
         {
             {
-                static_cast<float>(m_OriginX / viewport.pixel_width),
-                static_cast<float>((pen.y - adv_y) / viewport.pixel_height),
-                static_cast<float>(pen.x / viewport.pixel_width),
-                static_cast<float>(pen.y / viewport.pixel_height)
+                static_cast<float>(m_OriginX / viewport.width),
+                static_cast<float>((pen.y - adv_y) / viewport.height),
+                static_cast<float>(pen.x / viewport.width),
+                static_cast<float>(pen.y / viewport.height)
             },
 
             {
@@ -147,8 +147,8 @@ bool TextBufferImpl::AddChar(pen_s & pen,
                              const markup_s & markup,
                              const viewport::viewport_s & viewport,
                              wchar_t ch) {
-    float pt_width = viewport.pixel_width * 72 / viewport.dpi;
-    float pt_height = viewport.pixel_height * 72 / viewport.dpi_height;
+    float pt_width = viewport.width * 72 / viewport.dpi;
+    float pt_height = viewport.height * 72 / viewport.dpi_height;
 
     auto adv_y = viewport.line_height ? viewport.line_height : markup.font->GetHeight();
 
@@ -179,7 +179,7 @@ bool TextBufferImpl::AddChar(pen_s & pen,
     glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
     glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, -markup.font->GetAscender(), 0));
     glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(pen.x, pen.y, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(2.0 / viewport.pixel_width, 2.0 / viewport.pixel_height, 0));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(2.0 / viewport.width, 2.0 / viewport.height, 0));
 
     // glm::mat4 scale_font = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetHeight(), markup.font->GetHeight(), 0));
 
@@ -231,7 +231,7 @@ void TextBufferImpl::Init() {
 	glBindTexture(GL_TEXTURE_2D, m_RenderedTexture);
 
 	// Give an empty image to OpenGL ( the last "0" means "empty" )
-	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, m_Viewport.pixel_width, m_Viewport.pixel_height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, m_Viewport.width, m_Viewport.height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 
 	// Poor filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -243,7 +243,7 @@ void TextBufferImpl::Init() {
 	GLuint depthrenderbuffer;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_Viewport.pixel_width, m_Viewport.pixel_height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_Viewport.width, m_Viewport.height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
 	// Set "renderedTexture" as our colour attachement #0

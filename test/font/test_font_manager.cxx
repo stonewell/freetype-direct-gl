@@ -1,7 +1,7 @@
 #include "font_manager.h"
 
 int main() {
-    ftdgl::FontManagerPtr fm = ftdgl::CreateFontManager();
+    ftdgl::FontManagerPtr fm = ftdgl::CreateFontManager(72, 72);
 
     fm->CreateFontFromDesc("Serif-12:lang=en:weight=200");
     fm->CreateFontFromDesc("Serif-12:lang=ko:weight=200");

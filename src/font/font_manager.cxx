@@ -20,11 +20,13 @@ constexpr size_t DEFAULT_MEM_BUF_SIZE = 64 * 1024 * 1024;
 
 class FontManagerImpl : public FontManager {
 public:
-    FontManagerImpl(size_t mem_buf_size)
+    FontManagerImpl(size_t mem_buf_size,float dpi, float dpi_height)
         : m_Fonts {}
         , m_LibInited {false}
         , m_Library {}
         , m_MemoryBuffer {util::CreateMemoryBuffer(mem_buf_size)}
+        , m_Dpi {dpi}
+        , m_DpiHeight {dpi_height}
     {
         InitFreeTypeLib();
     }
@@ -65,6 +67,8 @@ private:
     FT_Library m_Library;
 
     util::MemoryBufferPtr m_MemoryBuffer;
+    float m_Dpi;
+    float m_DpiHeight;
 };
 
 FontPtr FontManagerImpl::CreateFontFromDesc(const std::string &desc) {
@@ -74,7 +78,7 @@ FontPtr FontManagerImpl::CreateFontFromDesc(const std::string &desc) {
         }
     }
 
-    auto f = impl::CreateFontFromDesc(m_MemoryBuffer, m_Library, desc);
+    auto f = impl::CreateFontFromDesc(m_MemoryBuffer, m_Library, desc, m_Dpi, m_DpiHeight);
 
     if (f)
         m_Fonts.push_front(f);
@@ -83,7 +87,9 @@ FontPtr FontManagerImpl::CreateFontFromDesc(const std::string &desc) {
 }
 } // namespace impl
 
-FontManagerPtr CreateFontManager() {
-    return std::make_shared<impl::FontManagerImpl>(impl::DEFAULT_MEM_BUF_SIZE);
+FontManagerPtr CreateFontManager(float dpi, float dpi_height) {
+    return std::make_shared<impl::FontManagerImpl>(impl::DEFAULT_MEM_BUF_SIZE,
+                                                   dpi,
+                                                   dpi_height);
 }
 } // namespace ftdgl

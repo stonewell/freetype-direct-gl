@@ -18,7 +18,6 @@ namespace impl {
 
 #define HRES  64
 #define HRESf 64.f
-#define DPI   220
 
 struct font_desc_s {
     std::string file_name;
@@ -38,13 +37,15 @@ struct font_desc_s {
 
 class FontImpl : public Font {
 public:
-    FontImpl(util::MemoryBufferPtr mem_buf, FT_Library & library, const font_desc_s & font_desc)
+    FontImpl(util::MemoryBufferPtr mem_buf, FT_Library & library, const font_desc_s & font_desc, float dpi, float dpi_height)
         : m_FontFaceInitialized {false}
         , m_FontDesc {font_desc}
         , m_Library {library}
         , m_Face {}
         , m_MemoryBuffer {mem_buf}
         , m_Glyphs {}
+        , m_Dpi {dpi}
+        , m_DpiHeight {dpi_height}
     {
         InitFont();
     }
@@ -90,6 +91,8 @@ private:
     util::MemoryBufferPtr m_MemoryBuffer;
 
     Glyphs m_Glyphs;
+    float m_Dpi;
+    float m_DpiHeight;
 };
 
 
@@ -162,7 +165,8 @@ match_description(const std::string & description, font_desc_s & fd )
 
 FontPtr CreateFontFromDesc(util::MemoryBufferPtr memory_buffer,
                            FT_Library & library,
-                           const std::string & desc) {
+                           const std::string & desc,
+                           float dpi, float dpi_height) {
     font_desc_s fd {};
 
     if (!match_description(desc, fd))
@@ -173,9 +177,11 @@ FontPtr CreateFontFromDesc(util::MemoryBufferPtr memory_buffer,
               << "b:" << fd.bold << ","
               << "fb:" << fd.force_bold << ","
               << "u:" << fd.underline
+              << ", dpi:" << dpi
+              << ", dpi_height:" << dpi_height
               << std::endl;
 
-    return std::make_shared<FontImpl>(memory_buffer, library, fd);
+    return std::make_shared<FontImpl>(memory_buffer, library, fd, dpi, dpi_height);
 }
 
 bool FontImpl::IsSameFont(const std::string & desc) {
@@ -209,7 +215,7 @@ void FontImpl::InitFont() {
     }
 
     /* Set char size */
-    error = FT_Set_Char_Size(m_Face, (int)(m_FontDesc.size * HRES), 0, DPI, DPI);
+    error = FT_Set_Char_Size(m_Face, (int)(m_FontDesc.size * HRES), 0, floor(m_Dpi), floor(m_DpiHeight));
 
     if(error) {
         err_msg(error, __LINE__);

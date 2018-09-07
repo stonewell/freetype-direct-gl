@@ -22,7 +22,7 @@ ftdgl::render::RenderPtr render;
 
 void init(const ftdgl::viewport::viewport_s & viewport)
 {
-    font_manager = ftdgl::CreateFontManager();
+    font_manager = ftdgl::CreateFontManager(viewport.dpi, viewport.dpi_height);
     buffer = ftdgl::text::CreateTextBuffer(viewport);
     render = ftdgl::render::CreateRender();
 
@@ -195,9 +195,7 @@ int main( int argc, char **argv )
               << std::endl;
 
     ftdgl::viewport::viewport_s viewport {
-        0, 0,
         pixel_width, pixel_height,
-        500, 220,
         dpi, dpi_height,
         0, 0
     };
@@ -205,7 +203,6 @@ int main( int argc, char **argv )
     init(viewport);
 
     glfwShowWindow( window );
-    reshape( window, 500, 220 );
 
     while(!glfwWindowShouldClose( window ))
     {
