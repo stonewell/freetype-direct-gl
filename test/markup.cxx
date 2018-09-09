@@ -185,10 +185,15 @@ int main( int argc, char **argv )
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
-    float dpi = mode->width / (widthMM / 25.4);
-    float dpi_height = (mode->height / (heightMM / 25.4));
 
-    std::cout << "w:" << pixel_width << ", h:" << pixel_height
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    float dpi = mode->width / (widthMM / 25.4) * (float)pixel_width / (float)width;
+    float dpi_height = (mode->height / (heightMM / 25.4)) * (float)pixel_height / (float)height;
+
+    std::cout << "pw:" << pixel_width << ", ph:" << pixel_height
+              << ", w:" << width << ", h:" << height
               << ", dpi:" << dpi
               << ", " << dpi_height
               << ", mw:" << mode->width << ", mh:" << mode->height
