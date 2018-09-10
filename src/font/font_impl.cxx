@@ -50,6 +50,7 @@ struct font_desc_s {
     bool bold;
     bool underline;
     bool force_bold;
+    int index;
 
     internal_font_s internal_font;
 
@@ -155,6 +156,8 @@ FcResult create_font_desc(FcResult result, const std::string& description,
 		GET_VALUE (FC_STYLE);
 		std::string style { (char*) (value.u.s) };
 		fd.force_bold = fd.bold && style.find("Bold") == std::string::npos;
+        GET_VALUE (FC_INDEX);
+        fd.index = value.u.i;
 	} while (false);
 
 	return result;
@@ -336,7 +339,7 @@ void internal_font_s::Init(FT_Library & library, const font_desc_s & fontDesc, f
     FT_Error error;
 
     /* Load face */
-    error = FT_New_Face(library, fontDesc.file_name.c_str(), 0, &m_Face);
+    error = FT_New_Face(library, fontDesc.file_name.c_str(), fontDesc.index, &m_Face);
 
     if(error) {
         std::cout << "font load failed:" << fontDesc.file_name << std::endl;
