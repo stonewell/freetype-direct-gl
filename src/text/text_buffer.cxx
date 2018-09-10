@@ -28,8 +28,8 @@ namespace impl {
   # data for offsets -2/3 and -1/3 with only one additional texture lookup.
   #
 */
-
-constexpr
+static
+const
 glm::vec2 JITTER_PATTERN[] = {
     {-1 / 12.0, -5 / 12.0},
 	{ 1 / 12.0,  1 / 12.0},
