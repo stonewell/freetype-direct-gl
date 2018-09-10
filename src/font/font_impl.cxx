@@ -11,7 +11,7 @@
 
 #include <fontconfig/fontconfig.h>
 #include <iostream>
-#include <vector>
+#include <algorithm>
 #include <stdio.h>
 #include <math.h>
 
