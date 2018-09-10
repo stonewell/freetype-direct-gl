@@ -56,7 +56,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     ftdgl::text::markup_s math      = normal; math.font = f_math;math.fore_color = yellow;
     math.back_color = grey;
 
-    ftdgl::text::pen_s pen = {40, 400};
+    ftdgl::text::pen_s pen = {40, 850};
 
     buffer->AddText(pen, normal, L"The");
     buffer->AddText(pen, normal,    L" Quick");
@@ -69,7 +69,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
                     L"to come to the aid of the party.\n"); pen.x = 20;
     buffer->AddText(pen, italic,    L"Ég get etið gler án þess að meiða mig.\n"); pen.x = 20;
     buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n"); pen.x = 20;
-    buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ\n"); pen.x = 20;
+    buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂけま哈哈\n"); pen.x = 20;
     buffer->AddText(pen, big, L"pork\n"); pen.x = 20;
     buffer->AddText(pen, normal, L"AAAAArial");
 }
@@ -83,7 +83,6 @@ void display( GLFWwindow* window )
     glClearColor(0.40,0.40,0.45,1.00);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    glViewport(0, 0, 500 * 2, 220 * 2);
     render->RenderText(buffer);
     render->RenderText(buffer);
 
@@ -154,7 +153,7 @@ int main( int argc, char **argv )
 	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow( 500, 220, argv[0], NULL, NULL );
+    window = glfwCreateWindow( 800, 440, argv[0], NULL, NULL );
 
     if (!window)
     {

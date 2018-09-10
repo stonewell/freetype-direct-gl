@@ -74,7 +74,6 @@ GlyphPtr CreateGlyph(util::MemoryBufferPtr mem_buf, uint32_t codepoint, int unit
 
     size_t size = 0;
 
-
     if (OutlineExist(slot)) {
         addr = mem_buf->Begin();
         size = compile_glyph(addr, unitPerEM, slot->outline);
