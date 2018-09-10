@@ -13,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include <stdio.h>
+#include <math.h>
 
 namespace ftdgl {
 namespace impl {
