@@ -270,8 +270,6 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
 
     FT_UInt index = FT_Get_Char_Index(face, (FT_Long)codepoint);
 
-    bool glyph_loaded = false;
-
     if (!index) {
         for(auto & font_desc : m_FontDescs) {
             font_desc.LoadFont(m_Library, m_Dpi, m_DpiHeight);
@@ -281,32 +279,20 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
             index = FT_Get_Char_Index(face, (FT_Long)codepoint);
 
             if (index) {
-                FT_Error error = FT_Load_Glyph(face,
-                                               index,
-                                               /*FT_LOAD_NO_SCALE |*/ FT_LOAD_NO_BITMAP | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LCD);
-                if(error) {
-                    continue;
-                }
-
-                glyph_loaded = true;
                 break;
             }
         }
-
-        if (!glyph_loaded) index = 0;
 
         if (!index)
             std::cout << "no char index found for:" << codepoint << std::endl;
     }
 
-    if (!glyph_loaded) {
-        FT_Error error = FT_Load_Glyph(face,
-                                       index,
-                                       /*FT_LOAD_NO_SCALE |*/ FT_LOAD_NO_BITMAP | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LCD);
-        if(error) {
-            err_msg(error, __LINE__);
-            return GlyphPtr {};
-        }
+    FT_Error error = FT_Load_Glyph(face,
+                                   index,
+                                   /*FT_LOAD_NO_SCALE |*/ FT_LOAD_NO_BITMAP | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LCD);
+    if(error) {
+        err_msg(error, __LINE__);
+        return GlyphPtr {};
     }
 
     auto g = CreateGlyph(m_MemoryBuffer, codepoint, face->units_per_EM, face->glyph);
