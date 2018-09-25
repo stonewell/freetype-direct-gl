@@ -7,11 +7,12 @@ ProgramPtr g_RenderBackgroundProgram = {};
 
 static
 const char * vert_source = "\n"
-        "attribute vec2 position2;\n"
-        "attribute vec4 rect;\n"
-        "attribute vec4 color;\n"
-        "varying vec2 _coord2;\n"
-        "varying vec4 _color;\n"
+        "#version 330 core\n"
+        "in vec2 position2;\n"
+        "in vec4 rect;\n"
+        "in vec4 color;\n"
+        "out vec2 _coord2;\n"
+        "out vec4 _color;\n"
         "void main() {\n"
         "	_coord2 = mix(rect.xy, rect.zw, position2 * 0.5 + 0.5);\n"
         "   _color = color;\n"
@@ -20,10 +21,12 @@ const char * vert_source = "\n"
 
 static
 const char * frag_source = "\n"
-        "varying vec2 _coord2;\n"
-        "varying vec4 _color;\n"
+        "#version 330 core\n"
+        "in vec2 _coord2;\n"
+        "in vec4 _color;\n"
+        "out vec4 output_color;\n"
         "void main() {\n"
-        "	gl_FragColor = _color;\n"
+        "	output_color = _color;\n"
         "}\n";
 
 
