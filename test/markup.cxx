@@ -22,9 +22,13 @@ ftdgl::render::RenderPtr render;
 
 void init(const ftdgl::viewport::viewport_s & viewport)
 {
-    font_manager = ftdgl::CreateFontManager(viewport.dpi, viewport.dpi_height);
+    if (!font_manager)
+        font_manager = ftdgl::CreateFontManager(viewport.dpi, viewport.dpi_height);
+
     buffer = ftdgl::text::CreateTextBuffer(viewport);
-    render = ftdgl::render::CreateRender();
+
+    if (!render)
+        render = ftdgl::render::CreateRender();
 
     ftdgl::text::color_s black  = {0.0, 0.0, 0.0, 1.0};
     ftdgl::text::color_s white  = {1.0, 1.0, 1.0, 1.0};
@@ -32,7 +36,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     ftdgl::text::color_s grey   = {0.5, 0.5, 0.5, 1.0};
     ftdgl::text::color_s none   = {1.0, 1.0, 1.0, 0.0};
 
-    ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Menlo:size=16");
+    ftdgl::FontPtr f_normal   = font_manager->CreateFontFromDesc("Monospace:size=16");
     ftdgl::FontPtr f_small   = font_manager->CreateFontFromDesc("Monospace:size=10");
     ftdgl::FontPtr f_big   = font_manager->CreateFontFromDesc("Monospace:size=48:slant=italic");
     ftdgl::FontPtr f_bold     = font_manager->CreateFontFromDesc("Droid Serif:size=24:weight=200");
@@ -58,6 +62,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
 
     ftdgl::text::pen_s pen = {40, 850};
 
+    (void)none;
     buffer->AddText(pen, normal, L"The");
     buffer->AddText(pen, normal,    L" Quick");
     buffer->AddText(pen, big,       L" brown ");
@@ -71,9 +76,37 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     buffer->AddText(pen, japanese,  L"私はガラスを食べられます。 それは私を傷つけません\n"); pen.x = 20;
     buffer->AddText(pen, math,      L"ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂけま哈哈\n"); pen.x = 20;
     buffer->AddText(pen, big, L"pork\n"); pen.x = 20;
-    buffer->AddText(pen, normal, L"AAAAArial");
+    buffer->AddText(pen, normal, L"Arial");
 }
 
+void setup(GLFWwindow* window) {
+    int pixel_height = 0, pixel_width = 0;
+    glfwGetFramebufferSize(window, &pixel_width, &pixel_height);
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int widthMM, heightMM;
+    glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
+
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    float dpi = mode->width / (widthMM / 25.4) * (float)pixel_width / (float)width;
+    float dpi_height = (mode->height / (heightMM / 25.4)) * (float)pixel_height / (float)height;
+
+    std::cout << "pw:" << pixel_width << ", ph:" << pixel_height
+              << ", w:" << width << ", h:" << height
+              << ", dpi:" << dpi
+              << ", " << dpi_height
+              << ", mw:" << mode->width << ", mh:" << mode->height
+              << std::endl;
+
+    ftdgl::viewport::viewport_s viewport {
+        pixel_width, pixel_height,
+        dpi, dpi_height,
+        0, 0
+    };
+
+    init(viewport);
+}
 
 // ---------------------------------------------------------------- display ---
 void display( GLFWwindow* window )
@@ -83,8 +116,10 @@ void display( GLFWwindow* window )
     glClearColor(0.40,0.40,0.45,1.00);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    render->RenderText(buffer);
-    render->RenderText(buffer);
+    if (buffer && render) {
+        render->RenderText(buffer);
+        render->RenderText(buffer);
+    }
 
     glfwSwapBuffers( window );
 }
@@ -99,6 +134,7 @@ void reshape( GLFWwindow* window, int width, int height )
     glViewport(0, 0, width, height);
 
     printf("w:%d, h:%d\n", width, height);
+    setup(window);
 }
 
 
@@ -148,10 +184,10 @@ int main( int argc, char **argv )
 
     glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
     glfwWindowHint( GLFW_RESIZABLE, GL_FALSE );
-	// glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	// glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     window = glfwCreateWindow( 800, 440, argv[0], NULL, NULL );
 
@@ -178,33 +214,6 @@ int main( int argc, char **argv )
     }
     fprintf( stderr, "Using GLEW %s\n", glewGetString(GLEW_VERSION) );
 #endif
-
-    int pixel_height = 0, pixel_width = 0;
-    glfwGetFramebufferSize(window, &pixel_width, &pixel_height);
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int widthMM, heightMM;
-    glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
-
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-
-    float dpi = mode->width / (widthMM / 25.4) * (float)pixel_width / (float)width;
-    float dpi_height = (mode->height / (heightMM / 25.4)) * (float)pixel_height / (float)height;
-
-    std::cout << "pw:" << pixel_width << ", ph:" << pixel_height
-              << ", w:" << width << ", h:" << height
-              << ", dpi:" << dpi
-              << ", " << dpi_height
-              << ", mw:" << mode->width << ", mh:" << mode->height
-              << std::endl;
-
-    ftdgl::viewport::viewport_s viewport {
-        pixel_width, pixel_height,
-        dpi, dpi_height,
-        0, 0
-    };
-
-    init(viewport);
 
     glfwShowWindow( window );
 

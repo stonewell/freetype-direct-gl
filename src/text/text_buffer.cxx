@@ -293,6 +293,10 @@ void TextBufferImpl::GenTexture() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
 
+	GLuint VertexArrayID;
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);
+
     GLuint buffers[2] = {0};
     glGenBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
 
@@ -348,6 +352,7 @@ void TextBufferImpl::GenTexture() {
     glUseProgram(0);
     glDeleteBuffers(sizeof(buffers) / sizeof(GLuint), buffers);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindVertexArray(0);
 
     m_TextureGenerated = true;
 }
