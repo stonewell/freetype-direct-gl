@@ -184,16 +184,19 @@ int main( int argc, char **argv )
 
     glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
     glfwWindowHint( GLFW_RESIZABLE, GL_FALSE );
+#ifndef __APPLE__
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 
     window = glfwCreateWindow( 800, 440, argv[0], NULL, NULL );
 
     if (!window)
     {
         glfwTerminate( );
+        fprintf(stderr, "error create window\n");
         exit( EXIT_FAILURE );
     }
 
@@ -214,6 +217,8 @@ int main( int argc, char **argv )
     }
     fprintf( stderr, "Using GLEW %s\n", glewGetString(GLEW_VERSION) );
 #endif
+
+    reshape(window, 800 * 2, 440 * 2);
 
     glfwShowWindow( window );
 
