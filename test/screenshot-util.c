@@ -3,6 +3,7 @@
  * Distributed under the OSI-approved BSD 2-Clause License.  See accompanying
  * file `LICENSE` for more details.
  */
+#define GL_SILENCE_DEPRECATION
 #include <stdlib.h>
 #include <stdio.h>
 

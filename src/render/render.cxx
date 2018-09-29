@@ -112,7 +112,7 @@ void RenderImpl::Init() {
 
     glUseProgram(*m_Program);
 
-    m_RenderTextureIndex = glGetUniformLocation(*m_Program, "texture");
+    m_RenderTextureIndex = glGetUniformLocation(*m_Program, "texture_render");
     m_FirstRoundIndex = glGetUniformLocation(*m_Program, "first_round");
 
     glUseProgram(0);

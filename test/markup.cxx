@@ -1,3 +1,4 @@
+#define GL_SILENCE_DEPRECATION
 #include "opengl.h"
 #ifndef __APPLE__
 #include <GL/glew.h>
@@ -15,6 +16,9 @@
 #include "render.h"
 #include "screenshot-util.h"
 
+#ifdef GLFW_HACK_FIX
+#include "glfw_hack.h"
+#endif
 
 ftdgl::FontManagerPtr font_manager;
 ftdgl::text::TextBufferPtr buffer;
@@ -121,6 +125,10 @@ void display( GLFWwindow* window )
         render->RenderText(buffer);
     }
 
+#ifdef GLFW_HACK_FIX
+    updateGlfwContext(window);
+#endif
+
     glfwSwapBuffers( window );
 }
 
@@ -184,12 +192,10 @@ int main( int argc, char **argv )
 
     glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
     glfwWindowHint( GLFW_RESIZABLE, GL_FALSE );
-#ifndef __APPLE__
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#endif
 
     window = glfwCreateWindow( 800, 440, argv[0], NULL, NULL );
 
