@@ -16,7 +16,7 @@
 #include "render.h"
 #include "screenshot-util.h"
 
-#ifdef __APPLE__
+#ifdef GLFW_HACK_FIX
 #include "glfw_hack.h"
 #endif
 
@@ -125,7 +125,7 @@ void display( GLFWwindow* window )
         render->RenderText(buffer);
     }
 
-#ifdef __APPLE__
+#ifdef GLFW_HACK_FIX
     updateGlfwContext(window);
 #endif
 
