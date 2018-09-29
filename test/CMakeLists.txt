@@ -11,6 +11,22 @@ SET(screenshot_src
     opengl.h
 )
 
+SET(EXTRA_LIB "")
+
+IF(APPLE)
+   EXEC_PROGRAM(uname ARGS -v  OUTPUT_VARIABLE DARWIN_VERSION)
+   STRING(REGEX MATCH "[0-9]+" DARWIN_VERSION ${DARWIN_VERSION})
+   MESSAGE(STATUS "DARWIN_VERSION=${DARWIN_VERSION}")
+   IF (DARWIN_VERSION GREATER_EQUAL 18)
+      LIST(APPEND markup_src glfw_hack.h glfw_hack.m)
+      SET(EXTRA_LIB "-framework Foundation")
+      MESSAGE(STATUS "add glfw hack fix for macos > 10.14")
+      ADD_DEFINITIONS(-DGLFW_HACK_FIX)
+   ENDIF (DARWIN_VERSION GREATER_EQUAL 18)
+ELSE()
+    SET(EXTRA_LIB ${GLEW_LIBRARY})
+ENDIF()
+
 ADD_EXECUTABLE(markup
     ${markup_src}
     ${screenshot_src}
@@ -31,5 +47,5 @@ TARGET_LINK_LIBRARIES(markup
     ${FREETYPE_LIBRARY}
     glfw
     ${OPENGL_LIBRARY}
-    ${GLEW_LIBRARY}
+    ${EXTRA_LIB}
 )

@@ -11,4 +11,5 @@ TARGET_INCLUDE_DIRECTORIES(render PRIVATE
   "../utils"
   "../viewport"
   ${FREETYPE_INCLUDE_DIRS}
+  ${GLM_INCLUDE_DIR}
 )
