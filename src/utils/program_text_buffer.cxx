@@ -8,9 +8,9 @@ ProgramPtr g_TextBufferProgram = {};
 static
 const char * vert_source = "\n"
         "#version 330 core\n"
-        "in vec4 position4;\n"
-        "in vec4 color;\n"
-        "in mat4 matrix4;\n"
+        "layout(location=0) in vec4 position4;\n"
+        "layout(location=1) in vec4 color;\n"
+        "layout(location=2) in mat4 matrix4;\n"
         "out vec2 _coord2;\n"
         "out vec4 _color;\n"
         "void main() {\n"
