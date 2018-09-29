@@ -11,6 +11,13 @@ SET(screenshot_src
     opengl.h
 )
 
+IF(APPLE)
+LIST(APPEND markup_src glfw_hack.h glfw_hack.m)
+SET(EXTRA_LIB "-framework Foundation")
+ELSE()
+SET(EXTRA_LIB "")
+ENDIF()
+
 ADD_EXECUTABLE(markup
     ${markup_src}
     ${screenshot_src}
@@ -32,4 +39,5 @@ TARGET_LINK_LIBRARIES(markup
     glfw
     ${OPENGL_LIBRARY}
     ${GLEW_LIBRARY}
+    ${EXTRA_LIB}
 )

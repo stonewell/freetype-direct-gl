@@ -16,6 +16,9 @@
 #include "render.h"
 #include "screenshot-util.h"
 
+#ifdef __APPLE__
+#include "glfw_hack.h"
+#endif
 
 ftdgl::FontManagerPtr font_manager;
 ftdgl::text::TextBufferPtr buffer;
@@ -121,6 +124,10 @@ void display( GLFWwindow* window )
         render->RenderText(buffer);
         render->RenderText(buffer);
     }
+
+#ifdef __APPLE__
+    updateGlfwContext(window);
+#endif
 
     glfwSwapBuffers( window );
 }
