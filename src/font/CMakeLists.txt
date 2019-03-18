@@ -5,6 +5,7 @@ SET(font_src
   glyph.h
   glyph_impl.h glyph_impl.cxx
   glyph_compiler.h glyph_compiler.cxx
+  cu2qu.cxx cu2qu.h
 )
 
 ADD_LIBRARY(font OBJECT
