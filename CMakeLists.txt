@@ -43,9 +43,9 @@ SET(CXX_STANDARD_REQUIRED OFF)
 SET(CXX_EXTENSION NO)
 
 if (NOT CONFIGURED_ONCE)
-    set(CMAKE_C_FLAGS "-fPIC ${warnings}"
+    set(CMAKE_C_FLAGS "-g -O0 -fPIC ${warnings}"
         CACHE STRING "Flags used by the compiler during all build types." FORCE)
-    set(CMAKE_CXX_FLAGS "-fPIC ${warnings} -std=c++14"
+    set(CMAKE_CXX_FLAGS "-g -O0 -fPIC ${warnings} -std=c++14"
         CACHE STRING "Flags used by the compiler during all build types." FORCE)
     set(CMAKE_LINK_FLAGS "${no_undefined}"
         CACHE STRING "Flags used by the linker during all build types." FORCE)

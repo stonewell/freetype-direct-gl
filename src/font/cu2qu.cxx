@@ -29,8 +29,8 @@ point_type cubic_approx_control(double t,
                                 const point_type_vector & cubic);
 static
 void split_cubic_into_n_iter(const point_type_vector & cubic,
-                                                       int n,
-                                                       std::vector<point_type_vector> results);
+                             int n,
+                             std::vector<point_type_vector> & results);
 
 bool curve_to_quadratic(const point_type_vector & ctl_points,
                         point_type_vector & spline_points) {
@@ -213,7 +213,7 @@ point_type_vector calc_cubic_points(const point_type_vector & cubic) {
 static
 void _split_cubic_into_n_gen(const point_type_vector & cubic,
                              int n,
-                             std::vector<point_type_vector> results) {
+                             std::vector<point_type_vector> & results) {
     auto abcd = calc_cubic_parameters(cubic);
 
     double dt = 1.0 / (double)n;
@@ -236,7 +236,7 @@ void _split_cubic_into_n_gen(const point_type_vector & cubic,
 
 static
 void split_cubic_into_two(const point_type_vector & cubic,
-                          std::vector<point_type_vector> results) {
+                          std::vector<point_type_vector> & results) {
     const auto & p0 = cubic[0];
     const auto & p1 = cubic[1];
     const auto & p2 = cubic[2];
@@ -251,7 +251,7 @@ void split_cubic_into_two(const point_type_vector & cubic,
 
 static
 void split_cubic_into_three(const point_type_vector & cubic,
-                          std::vector<point_type_vector> results) {
+                            std::vector<point_type_vector> & results) {
     const auto & p0 = cubic[0];
     const auto & p1 = cubic[1];
     const auto & p2 = cubic[2];
@@ -270,7 +270,7 @@ void split_cubic_into_three(const point_type_vector & cubic,
 static
 void split_cubic_into_n_iter(const point_type_vector & cubic,
                              int n,
-                             std::vector<point_type_vector> results) {
+                             std::vector<point_type_vector> & results) {
     if (n == 2) {
         split_cubic_into_two(cubic, results);
     }

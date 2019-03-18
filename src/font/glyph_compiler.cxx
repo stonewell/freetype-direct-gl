@@ -11,6 +11,7 @@
 
 #include "glyph_compiler.h"
 #include "err_msg.h"
+#include "cu2qu.h"
 
 namespace ftdgl {
 namespace impl {
@@ -125,12 +126,48 @@ int CubicToFunction(const FT_Vector *controlOne,
                        to->x, to->y, SOLID);
     }
 
-    AppendTriangle(context, context->currentX, context->currentY,
-                   controlOne->x, controlOne->y,
-                   to->x, to->y, QUADRATIC_CURVE);
-    AppendTriangle(context, context->currentX, context->currentY,
-                   controlTwo->x, controlTwo->y,
-                   to->x, to->y, QUADRATIC_CURVE);
+    point_type_vector spline_points;
+    point_type_vector ctl_points{
+        {(double)context->currentX, (double)context->currentY},
+        {(double)controlOne->x, (double)controlOne->y},
+        {(double)controlTwo->x, (double)controlTwo->y},
+        {(double)to->x, (double)to->y}
+    };
+
+    if (curve_to_quadratic(ctl_points, spline_points)) {
+        auto it = spline_points.begin() + 1;
+
+        while(it != spline_points.end() - 2) {
+            auto x = std::real(*it), y = std::imag(*it);
+            auto nx = std::real(*(it + 1)), ny = std::imag(*(it + 1));
+
+            auto implied_x = .5 * (x + nx), implied_y = .5 * (y + ny);
+
+            AppendTriangle(context, context->currentX, context->currentY,
+                           x, y,
+                           implied_x, implied_y,
+                           QUADRATIC_CURVE);
+
+            context->currentX = implied_x;
+            context->currentY = implied_y;
+            it++;
+        }
+
+        auto x = std::real(*it), y = std::imag(*it);
+        auto nx = std::real(*(it + 1)), ny = std::imag(*(it + 1));
+
+        AppendTriangle(context, context->currentX, context->currentY,
+                       x, y,
+                       nx, ny,
+                       QUADRATIC_CURVE);
+    } else {
+        AppendTriangle(context, context->currentX, context->currentY,
+                       controlOne->x, controlOne->y,
+                       to->x, to->y, QUADRATIC_CURVE);
+        AppendTriangle(context, context->currentX, context->currentY,
+                       controlTwo->x, controlTwo->y,
+                       to->x, to->y, QUADRATIC_CURVE);
+    }
 
     context->currentX = to->x;
     context->currentY = to->y;
