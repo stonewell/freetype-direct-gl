@@ -176,30 +176,32 @@ bool TextBufferImpl::AddChar(pen_s & pen,
 
     m_TextureGenerated = false;
 
-    glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0));
-    glm::mat4 translate1 = glm::translate(glm::mat4(1.0), glm::vec3(0, -markup.font->GetAscender(), 0));
-    glm::mat4 translate2 = glm::translate(glm::mat4(1.0), glm::vec3(pen.x, pen.y, 0));
-    glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(2.0 / viewport.width, 2.0 / viewport.height, 0));
+    glm::mat4 translate = std::move(glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0)));
+    glm::mat4 translate1 = std::move(glm::translate(glm::mat4(1.0), glm::vec3(0, -markup.font->GetAscender(), 0)));
+    glm::mat4 translate2 = std::move(glm::translate(glm::mat4(1.0), glm::vec3(pen.x, pen.y, 0)));
+    glm::mat4 scale = std::move(glm::scale(glm::mat4(1.0), glm::vec3(2.0 / viewport.width, 2.0 / viewport.height, 0)));
 
     // glm::mat4 scale_font = glm::scale(glm::mat4(1.0), glm::vec3(markup.font->GetHeight(), markup.font->GetHeight(), 0));
 
-    glm::mat4 transform = translate * scale * translate2 * translate1;
+    glm::mat4 transform = std::move(translate * scale * translate2 * translate1);
 
     auto c = glm::vec4(0.0, 0.0, 0.0, 0.0);
 
     auto p = m_GlyphMatrixColors.insert(std::pair<GlyphPtr, matrix_color_vector>(glyph, matrix_color_vector{}));
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
-        glm::mat4 translate3 = glm::translate(glm::mat4(1.0), glm::vec3(JITTER_PATTERN[i].x * 72 / viewport.dpi / pt_width ,
-                                                                        JITTER_PATTERN[i].y * 72 / viewport.dpi_height / pt_height,
-                                                                        0));
-        glm::mat4 transform_x = translate3 * transform;
+        glm::mat4 translate3 = std::move(glm::translate(glm::mat4(1.0),
+                                                        glm::vec3(JITTER_PATTERN[i].x * 72 / viewport.dpi / pt_width ,
+                                                                  JITTER_PATTERN[i].y * 72 / viewport.dpi_height / pt_height,
+                                                                  0)
+                                                        ));
+        glm::mat4 transform_x = std::move(translate3 * transform);
 
         if (i % 2 == 0) {
-            c = glm::vec4(i == 0 ? 1.0 : 0.0,
-                          i == 2 ? 1.0 : 0.0,
-                          i == 4 ? 1.0 : 0.0,
-                          0.0);
+            c = std::move(glm::vec4(i == 0 ? 1.0 : 0.0,
+                                    i == 2 ? 1.0 : 0.0,
+                                    i == 4 ? 1.0 : 0.0,
+                                    0.0));
         }
 
         p.first->second.push_back(
