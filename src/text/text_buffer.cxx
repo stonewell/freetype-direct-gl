@@ -101,7 +101,8 @@ private:
 private:
     void Init();
     void Destroy();
-    void AddTextAttr(const pen_s & pen, const markup_s & markup,
+    void AddTextAttr(const pen_s & pen,
+                     const markup_s & markup,
                      const viewport::viewport_s & viewport);
 };
 
@@ -137,7 +138,10 @@ void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
 
 bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) {
     m_OriginX = pen.x;
-    glm::mat4 translate1 = std::move(glm::translate(glm::mat4(1.0), glm::vec3(0, -markup.font->GetAscender(), 0)));
+    glm::mat4 translate1 = std::move(m_Scale * glm::translate(glm::mat4(1.0),
+                                                              glm::vec3(0,
+                                                                        -markup.font->GetAscender(),
+                                                                        0)));
 
     for(size_t i=0;i < text.length(); i++) {
         if (!AddChar(pen, markup, m_Viewport, translate1, text[i])) {
@@ -185,16 +189,14 @@ bool TextBufferImpl::AddChar(pen_s & pen,
 
     glm::mat4 translate2 = std::move(glm::translate(glm::mat4(1.0), glm::vec3(pen.x, pen.y, 0)));
 
-    glm::mat4 transform = std::move(TRANSLATE * m_Scale * translate2 * translate1);
+    glm::mat4 transform = std::move(translate1 * translate2);
 
     auto p = m_GlyphMatrixColors.insert(std::pair<GlyphPtr, matrix_color_vector>(glyph, matrix_color_vector{}));
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
-        glm::mat4 transform_x = std::move(m_Translate3[i] * transform);
-
         p.first->second.push_back(
             {
-                transform_x,
+                std::move(m_Translate3[i] * transform),
                 m_C[i]
             });
     }
@@ -257,7 +259,11 @@ void TextBufferImpl::Init() {
     m_ProgramId = CreateTextBufferProgram();
 
     //Create transform matrix
-    m_Scale = std::move(glm::scale(glm::mat4(1.0), glm::vec3(2.0 / m_Viewport.width, 2.0 / m_Viewport.height, 0)));
+    m_Scale = std::move(TRANSLATE *
+                        glm::scale(glm::mat4(1.0),
+                                   glm::vec3(2.0 / m_Viewport.width,
+                                             2.0 / m_Viewport.height,
+                                             0)));
 
     for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
         m_Translate3[i] = std::move(glm::translate(glm::mat4(1.0),
