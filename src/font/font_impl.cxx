@@ -277,6 +277,9 @@ GlyphPtr FontImpl::LoadGlyph(uint32_t codepoint) {
 
             face = font_desc.internal_font.m_Face;
 
+            if (!face)
+                continue;
+
             index = FT_Get_Char_Index(face, (FT_Long)codepoint);
 
             if (index) {
@@ -325,6 +328,8 @@ void internal_font_s::Init(FT_Library & library, const font_desc_s & fontDesc, f
 
     FT_Error error;
 
+    m_Face = nullptr;
+
     /* Load face */
     error = FT_New_Face(library, fontDesc.file_name.c_str(), fontDesc.index, &m_Face);
 
@@ -337,6 +342,7 @@ void internal_font_s::Init(FT_Library & library, const font_desc_s & fontDesc, f
     /* Select charmap */
     error = FT_Select_Charmap(m_Face, FT_ENCODING_UNICODE);
     if(error) {
+        std::cout << "font load failed:" << fontDesc.file_name << ", set char map failed" << std::endl;
         err_msg(error, __LINE__);
         goto cleanup_face;
     }
@@ -345,6 +351,7 @@ void internal_font_s::Init(FT_Library & library, const font_desc_s & fontDesc, f
     error = FT_Set_Char_Size(m_Face, (int)(fontDesc.size * HRES), 0, floor(dpi), floor(dpi_height));
 
     if(error) {
+        std::cout << "font load failed:" << fontDesc.file_name << ", set size failed" << std::endl;
         err_msg(error, __LINE__);
         goto cleanup_face;
     }
@@ -359,6 +366,7 @@ cleanup:
     return;
 cleanup_face:
     FT_Done_Face( m_Face );
+    m_Face = nullptr;
  }
 
 } //namespace impl
