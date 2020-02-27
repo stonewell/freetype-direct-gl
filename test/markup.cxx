@@ -64,7 +64,7 @@ void init(const ftdgl::viewport::viewport_s & viewport)
     ftdgl::text::markup_s math      = normal; math.font = f_math;math.fore_color = yellow;
     math.back_color = grey;
 
-    ftdgl::text::pen_s pen = {40, 850};
+    ftdgl::text::pen_s pen = {40, 250};
 
     (void)none;
     buffer->AddText(pen, normal, L"The");
