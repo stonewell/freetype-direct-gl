@@ -10,6 +10,9 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <map>
+#include <cassert>
+#include <mutex>
 
 namespace ftdgl {
 namespace text {
@@ -53,15 +56,117 @@ typedef struct __draw_array_indirect_cmd_s{
 
 using matrix_color_vector = std::vector<matrix_color_s>;
 using glyph_matrix_color_map = std::unordered_map<GlyphPtr, matrix_color_vector>;
+using pos_y_matrix_map = std::map<double, matrix_color_vector>;
+using pos_x_matrix_map = std::map<double, pos_y_matrix_map>;
+using font_pos_matrix_map = std::map<float, pos_x_matrix_map>;
 
 static
 const
 glm::mat4 TRANSLATE {glm::translate(glm::mat4(1.0), glm::vec3(-1, -1, 0))};
 
+class TextMatrix {
+public:
+    TextMatrix(const viewport::viewport_s & viewport)
+        : m_Viewport {viewport}
+        , m_Scale {}
+        , m_Translate3 {}
+        , m_C {}
+        , m_UpdateLock {}
+        , m_FontPosMatrix {} {
+        Init();
+    }
+
+    virtual ~TextMatrix() = default;
+
+    const viewport::viewport_s & m_Viewport;
+    glm::mat4 m_Scale;
+    glm::mat4 m_Translate3[sizeof(JITTER_PATTERN) / sizeof(glm::vec2)];
+    glm::vec4 m_C[sizeof(JITTER_PATTERN) / sizeof(glm::vec2)];
+    std::recursive_mutex m_UpdateLock;
+    font_pos_matrix_map m_FontPosMatrix;
+
+    void Init() {
+        //Create transform matrix
+        m_Scale = std::move(TRANSLATE *
+                            glm::scale(glm::mat4(1.0),
+                                       glm::vec3(2.0 / m_Viewport.width,
+                                                 2.0 / m_Viewport.height,
+                                                 0)));
+
+        for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
+            m_Translate3[i] = std::move(glm::translate(glm::mat4(1.0),
+                                                       glm::vec3(JITTER_PATTERN[i].x / m_Viewport.width,
+                                                                 JITTER_PATTERN[i].y / m_Viewport.height,
+                                                                 0)
+                                                       ));
+            if (i % 2 == 0) {
+                m_C[i] = std::move(glm::vec4(i == 0 ? 1.0 : 0.0,
+                                             i == 2 ? 1.0 : 0.0,
+                                             i == 4 ? 1.0 : 0.0,
+                                             0.0));
+            } else {
+                m_C[i] = m_C[i - 1];
+            }
+        }
+    }
+
+    matrix_color_vector * get_glyph_matrix(float ft_decent,
+                                           double pos_x, double pos_y) {
+        std::lock_guard<std::recursive_mutex> guard(m_UpdateLock);
+
+        auto ft_pos_it = m_FontPosMatrix.insert({ft_decent, pos_x_matrix_map{}});
+
+        auto pos_x_it = ft_pos_it.first->second.insert({pos_x, pos_y_matrix_map{}});
+
+        auto pos_y_it = pos_x_it.first->second.insert({pos_y, matrix_color_vector{}});
+
+        if (pos_y_it.second) {
+            glm::mat4 translate1 = std::move(m_Scale * glm::translate(glm::mat4(1.0),
+                                                                      glm::vec3(0,
+                                                                                -ft_decent,
+                                                                                0)));
+            glm::mat4 translate2 = std::move(glm::translate(glm::mat4(1.0), glm::vec3(pos_x, pos_y, 0)));
+
+            glm::mat4 transform = std::move(translate1 * translate2);
+
+            for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
+                pos_y_it.first->second.push_back(
+                    {
+                        std::move(m_Translate3[i] * transform),
+                        m_C[i]
+                    });
+            }
+        }
+
+        return &pos_y_it.first->second;
+    }
+};
+
+using TextMatrixPtr = std::shared_ptr<TextMatrix>;
+
+using viewport_font_pos_matrix_map = std::map<uint64_t, TextMatrixPtr>;
+static
+viewport_font_pos_matrix_map g_viewport_font_pos_matrix;
+static
+std::recursive_mutex g_MatrixLock;
+
+static
+TextMatrixPtr get_text_matrix_for_viewport(const viewport::viewport_s & viewport) {
+    std::lock_guard<std::recursive_mutex> guard(g_MatrixLock);
+
+    uint64_t v = (viewport.width & 0xFFFFFFFF);
+    uint64_t key = (v << 32) | (viewport.height & 0xFFFFFFFF);
+
+    auto pair = g_viewport_font_pos_matrix.insert({key, std::make_shared<TextMatrix>(viewport)});
+
+    return pair.first->second;
+}
+
 class TextBufferImpl : public TextBuffer {
 public:
     TextBufferImpl(const viewport::viewport_s & viewport)
-        : m_Viewport {viewport} {
+        : m_Viewport {viewport}
+        , m_TextMatrix {get_text_matrix_for_viewport(viewport)} {
         Init();
     }
 
@@ -80,7 +185,6 @@ private:
     bool AddChar(pen_s & pen,
                  const markup_s & markup,
                  const viewport::viewport_s & viewport,
-                 const glm::mat4 & translate1,
                  wchar_t ch);
 
 	GLuint m_RenderedTexture;
@@ -95,9 +199,7 @@ private:
 
     bool m_TextureGenerated;
     uint32_t m_VertexCount;
-    glm::mat4 m_Scale;
-    glm::mat4 m_Translate3[sizeof(JITTER_PATTERN) / sizeof(glm::vec2)];
-    glm::vec4 m_C[sizeof(JITTER_PATTERN) / sizeof(glm::vec2)];
+    TextMatrixPtr m_TextMatrix;
 private:
     void Init();
     void Destroy();
@@ -138,13 +240,9 @@ void TextBufferImpl::AddTextAttr(const pen_s & pen, const markup_s & markup,
 
 bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::wstring & text) {
     m_OriginX = pen.x;
-    glm::mat4 translate1 = std::move(m_Scale * glm::translate(glm::mat4(1.0),
-                                                              glm::vec3(0,
-                                                                        -markup.font->GetAscender(),
-                                                                        0)));
 
     for(size_t i=0;i < text.length(); i++) {
-        if (!AddChar(pen, markup, m_Viewport, translate1, text[i])) {
+        if (!AddChar(pen, markup, m_Viewport, text[i])) {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             return false;
         }
@@ -159,7 +257,6 @@ bool TextBufferImpl::AddText(pen_s & pen, const markup_s & markup, const std::ws
 bool TextBufferImpl::AddChar(pen_s & pen,
                              const markup_s & markup,
                              const viewport::viewport_s & viewport,
-                             const glm::mat4 & translate1,
                              wchar_t ch) {
     auto adv_y = viewport.line_height ? viewport.line_height : markup.font->GetHeight();
 
@@ -187,19 +284,14 @@ bool TextBufferImpl::AddChar(pen_s & pen,
 
     m_TextureGenerated = false;
 
-    glm::mat4 translate2 = std::move(glm::translate(glm::mat4(1.0), glm::vec3(pen.x, pen.y, 0)));
-
-    glm::mat4 transform = std::move(translate1 * translate2);
-
     auto p = m_GlyphMatrixColors.insert(std::pair<GlyphPtr, matrix_color_vector>(glyph, matrix_color_vector{}));
 
-    for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
-        p.first->second.push_back(
-            {
-                std::move(m_Translate3[i] * transform),
-                m_C[i]
-            });
-    }
+    auto matrix = m_TextMatrix->get_glyph_matrix(markup.font->GetAscender(),
+                                                 pen.x, pen.y);
+
+    p.first->second.insert(p.first->second.end(),
+                           matrix->begin(),
+                           matrix->end());
 
     m_VertexCount += glyph->GetSize() / sizeof(GLfloat) / 4;
 
@@ -247,7 +339,7 @@ void TextBufferImpl::Init() {
 
 	// Always check that our framebuffer is ok
 	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        printf("frame buffer status error\n");
+        assert("frame buffer status error\n");
         return;
     }
 
@@ -257,29 +349,6 @@ void TextBufferImpl::Init() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     m_ProgramId = CreateTextBufferProgram();
-
-    //Create transform matrix
-    m_Scale = std::move(TRANSLATE *
-                        glm::scale(glm::mat4(1.0),
-                                   glm::vec3(2.0 / m_Viewport.width,
-                                             2.0 / m_Viewport.height,
-                                             0)));
-
-    for(size_t i = 0; i < sizeof(JITTER_PATTERN) / sizeof(glm::vec2); i++) {
-        m_Translate3[i] = std::move(glm::translate(glm::mat4(1.0),
-                                                   glm::vec3(JITTER_PATTERN[i].x / m_Viewport.width,
-                                                             JITTER_PATTERN[i].y / m_Viewport.height,
-                                                             0)
-                                                   ));
-        if (i % 2 == 0) {
-            m_C[i] = std::move(glm::vec4(i == 0 ? 1.0 : 0.0,
-                                         i == 2 ? 1.0 : 0.0,
-                                         i == 4 ? 1.0 : 0.0,
-                                         0.0));
-        } else {
-            m_C[i] = m_C[i - 1];
-        }
-    }
 }
 
 void TextBufferImpl::Destroy() {

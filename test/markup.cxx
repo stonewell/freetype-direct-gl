@@ -110,6 +110,7 @@ void setup(GLFWwindow* window) {
     };
 
     init(viewport);
+    init(viewport);
 }
 
 // ---------------------------------------------------------------- display ---
